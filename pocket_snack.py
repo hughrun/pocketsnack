@@ -40,7 +40,7 @@ import settings
 # Log in to Pocket in a web browser
 # Go to https://getpocket.com/developer and click 'CREATE NEW APP'
 # Complete the form: you will need 'Modify' and 'Retrieve' permissions, and the platform should be 'Desktop (other)'
-# Your new app will show a 'consumer key', which you need to paste in between the quotes below
+# Your new app will show a 'consumer key', which you need to paste into the first line in settings.py
 
 # assign the consumer key to a parameter called consumer_key
 consumer_key = settings.pocket_consumer_key
