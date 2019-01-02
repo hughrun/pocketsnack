@@ -89,12 +89,14 @@ def choose():
   pass
 
 def get_list(consumer_key, pocket_access_token):
-  #
-  
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token}
-  # set up step 1 request - this should return a 'code' aka 'request token'
   request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
-  # get the JSON response and save the token to a param for the next step
+  return request.json()
+
+def get_tbr(consumer_key, pocket_access_token, archive_tag):
+  # only return items in the archive, tagged with whatever the archive tag is
+  params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
+  request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
   return request.json()
 
 def purge_tags():
@@ -103,6 +105,25 @@ def purge_tags():
   # optionally keep certain tags
   pass
 
-def stash():
-  # add tag and archive items 
-  pass
+def stash(consumer_key, pocket_access_token, archive_tag, fave):
+  if fave:
+    params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "favorite": "0"}
+  else:
+    params = {"consumer_key": consumer_key, "access_token": pocket_access_token}
+  request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
+  list_items = request.json()
+
+  # replace all tags with just the archive tag/s
+  actions = []
+  item_list = list_items['list']
+  for item in item_list:
+    item_id = item_list[item]['item_id']
+    action = {"action": "tags_replace", "item_id": item_id, "tags": archive_tag}
+    actions.append(action)
+
+  actions_string = json.dumps(actions)
+  # now URL encode it using urllib
+  actions_escaped = urllib.parse.quote(actions_string)
+  # POST
+  requests.post('https://getpocket.com/v3/send?actions=' + actions_escaped + '&access_token=' + pocket_access_token + '&consumer_key=' + consumer_key)
+  return 'done'
