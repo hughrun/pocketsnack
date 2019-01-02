@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # pocket-snack - a Python3 tool to help you retain your sanity when using your Pocket account
 
 # Copyright (C) 2019  Hugh Rundle
@@ -26,13 +28,41 @@
 import requests
 
 # bundled with Python
-import webbrowser
 import json
+import sys
 import urllib
+import webbrowser
 
 # local modules
 import settings
-import pocket_snack as ps
+import pocket_toolkit as pt
 
-# Run authorise once first to retrieve a pocket_access_token
-ps.authorise()
+# assign the consumer key to a parameter called consumer_key
+consumer_key = settings.pocket_consumer_key
+# assign a redirect URL for Pocket authentication
+redirect_uri = settings.pocket_redirect_uri
+
+arguments = sys.argv
+
+if len(arguments) > 1:
+  if arguments[1] == 'authorise':
+    # Run authorise once first to retrieve a pocket_access_token
+    pt.authorise(consumer_key, redirect_uri)
+
+  if arguments[1] == "list":
+    # Retrieve info about the user's list
+    response = pt.get_list(consumer_key, settings.pocket_access_token)
+    items = response['list']
+    longreads = 0
+    for item in items:
+      # is it a long read?
+      if 'word_count' in items[item]:
+        words = int(items[item]['word_count'])
+        longread = True if  words > settings.longreads_wordcount else False
+      else:
+        longread = False
+      if longread:
+        longreads += 1
+    print('The user list has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')
+else:
+  print('no args')

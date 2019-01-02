@@ -1,4 +1,4 @@
-# pocket-snack - a Python3 tool to help you retain your sanity when using your Pocket account
+# pocket-toolkit - a collection of functions to manage your Pocket account
 
 # Copyright (C) 2019  Hugh Rundle
 
@@ -39,24 +39,18 @@ import settings
 
 # Log in to Pocket in a web browser
 # Go to https://getpocket.com/developer and click 'CREATE NEW APP'
-# Complete the form: you will need 'Modify' and 'Retrieve' permissions, and the platform should be 'Desktop (other)'
+# Complete the form: you will need all permissions, and the platform should be 'Desktop (other)'
 # Your new app will show a 'consumer key', which you need to paste into the first line in settings.py
 
-# assign the consumer key to a parameter called consumer_key
-consumer_key = settings.pocket_consumer_key
-# assign a redirect URL for Pocket authentication
-redirect_uri = settings.pocket_redirect_uri
+# Pocket expects particular HTTP headers to send and receive JSON
+headers = {"Content-Type": "application/json; charset=UTF-8", "X-Accept": "application/json"}
 
 # ----------------
 # Authorise
 # ----------------
 
-def authorise():
-
-  # Pocket expects particular HTTP headers to send and receive JSON
-  headers = {"Content-Type": "application/json; charset=UTF-8", "X-Accept": "application/json"}
+def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
   paramsOne = {"consumer_key": consumer_key, "redirect_uri": redirect_uri}
-
   # set up step 1 request - this should return a 'code' aka 'request token'
   requestOne = requests.post('https://getpocket.com/v3/oauth/request', headers=headers, params=paramsOne)
   # get the JSON response and save the token to a param for the next step
@@ -89,3 +83,26 @@ def authorise():
     access_token = res['access_token']
     with open("settings.py", "a") as settings_file:
       settings_file.write("pocket_access_token = " + "'" + access_token + "'\n")
+
+def choose():
+  # choose items to put back into the user List
+  pass
+
+def get_list(consumer_key, pocket_access_token):
+  #
+  
+  params = {"consumer_key": consumer_key, "access_token": pocket_access_token}
+  # set up step 1 request - this should return a 'code' aka 'request token'
+  request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
+  # get the JSON response and save the token to a param for the next step
+  return request.json()
+
+def purge_tags():
+  # remove all tags from all items 
+  # optionally in List only, archive only or both
+  # optionally keep certain tags
+  pass
+
+def stash():
+  # add tag and archive items 
+  pass
