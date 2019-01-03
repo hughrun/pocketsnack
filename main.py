@@ -89,5 +89,9 @@ if len(arguments) > 1:
   if arguments[1] == 'lucky_dip':
     dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.minimum_videos, settings.minimum_images, settings.num_longreads, settings.longreads_wordcount)
     print(dip)
+
+  if arguments[1] == 'test':
+    result = pt.test(consumer_key, settings.pocket_access_token)
+    print(result)
 else:
   print('no args')

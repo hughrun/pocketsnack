@@ -115,30 +115,37 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, m
   request = get(params)
   tbr = request.json()['list']
 
-  # get a random selection
-  selection = random.sample(list(tbr), items_per_cycle)
-  
-  # Now un-archive everything in the selection
-  actions = []
-  
-  for item in selection:
-    # item_id = item_list[item]['item_id']
-    item_readd = {"item_id": item, "action": "readd"}
-    actions.append(item_readd)
-    # remove archive_tag as well, otherwise the item will keep appearing after it's read and archived by the user
-    item_detag = {"item_id": item, "action": "tags_remove", "tags": archive_tag}
-    actions.append(item_detag)
-  # stringify
-  items_string = json.dumps(actions)
-  escaped = urllib.parse.quote(items_string)
+  # before we go any further, make sure there actually is something in the TBR list!
+  if len(tbr) > 0:
+    # get a random selection
 
-  # re-add items
-  return send(escaped, consumer_key, pocket_access_token)
+    # check how many there are in the TBR list
+    # if there are fewer than items_per_cycle, just return all of them
+    selection = list(tbr) if len(tbr) < items_per_cycle else random.sample(list(tbr), items_per_cycle)
+    
+    # Now un-archive everything in the selection
+    actions = []
+    
+    for item in selection:
+      # item_id = item_list[item]['item_id']
+      item_readd = {"item_id": item, "action": "readd"}
+      actions.append(item_readd)
+      # remove archive_tag as well, otherwise the item will keep appearing after it's read and archived by the user
+      item_detag = {"item_id": item, "action": "tags_remove", "tags": archive_tag}
+      actions.append(item_detag)
+    # stringify
+    items_string = json.dumps(actions)
+    escaped = urllib.parse.quote(items_string)
+
+    # re-add items
+    return send(escaped, consumer_key, pocket_access_token)
+  else:
+    return 'Nothing to be read!'
 
 def purge_tags():
   # remove all tags from all items 
   # optionally in List only, archive only or both
-  # optionally keep certain tags
+  # optionally keep certain tags?
   pass
 
 """
@@ -157,32 +164,43 @@ favorite - boolean indicating whether to ignore (i.e. leave in the user list) fa
 
 def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite):
   if favorite:
-    params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "favorite": "0"}
+    params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread", "favorite": "0"}
   else:
-    params = {"consumer_key": consumer_key, "access_token": pocket_access_token}
+    params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
   
   # GET the list
   request = get(params)
   list_items = request.json()
 
-  # FIXME: temporarily make replace_all_tags False until retain_tags functionality works
-  replace_all_tags = False
-
   actions = []
   item_list = list_items['list']
   for item in item_list:
-    item_id = item_list[item]['item_id']
+    # item_id = item_list[item]['item_id']
     # set up the action dict
-    action = {"item_id": item_id}
+    action = {"item_id": item}
     if replace_all_tags: # temporarily always False until the functionality below can work
       action["action"] = "tags_replace"
       # are we retaining any tags?
-      if retain_tags: # retain_tags should either be False or a list
-        # we need to check whether this item actually contains any of the retain_tags
-        # FIXME: this won't work because Pocket doesn't actually return "tags", despite the API documentation
-        # TODO: maybe we process these first? i.e. use GET tag_name for each retain_tag, tag them with the archive_tag and then archive? But even then we don't know whether they contain multiple tags to keep.
-        tags_to_keep = set(retain_tags).intersection(item_list[item]['tags'])
-        action["tags"] = tags_to_keep
+      if retain_tags: # retain_tags should either be False or a Set
+        item_tags = []
+        if 'tags' in item_list[item]:
+          for tag in item_list[item]['tags']:
+            item_tags.append(tag)
+          # find the common tags between retain_tags and item_tags
+          # to do this we need retain_tags to be a set, but you can't JSON serialise
+          # a set, so we need to turn the result into a list afterwards
+          tags_to_keep = list(retain_tags.intersection(item_tags))
+          # don't forget to keep the archive_tag!
+          tags_to_keep.append(archive_tag)
+          action["tags"] = tags_to_keep
+        else:
+          # FIXME: 
+          # if there are no tags at all, add the archive tag
+          # this is circular, it means nothing will ever be fully archived.
+          # if they just didn't get to it they want the archive tag to stay
+          # but removing it every time manually is a PITA
+          # Maybe it should be manually *added* and only archived if it has the archive_tag?
+          action["tags"] = archive_tag
       else:
         action["tags"] = archive_tag
     else: # just add the archive tag
@@ -195,7 +213,7 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
   # now URL encode it using urllib
   actions_escaped = urllib.parse.quote(actions_string)
   # post update to tags
-  send(actions_escaped, consumer_key, pocket_access_token)
+  send(actions_escaped, consumer_key, pocket_access_token) # this appears to be acting on EVERYTHING, not just the stuff in the list
 
   # Now archive everything
   archive_actions = []
@@ -211,3 +229,13 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
 
   # archive items
   return send(archive_escaped, consumer_key, pocket_access_token)
+
+def test(consumer_key, pocket_access_token):
+
+  params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "count": "1", "detailType": "complete"}
+  
+  # GET the list
+  request = get(params)
+  list_items = request.json()
+
+  return json.dumps(list_items, indent=4, default=str)

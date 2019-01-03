@@ -28,7 +28,7 @@ This tells you how many items are in your archive and how many of them are 'long
 
 This has an 's', not a 'z'.
 
-You need this to authorise your app. Everything else works exclusively on the command line, but `authorise` needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, and add the token to `settings.py`.
+You need this to authorise your app. Everything else works exclusively on the command line, but _authorise_ needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, and add the token to `settings.py`.
 
 ### list
 
