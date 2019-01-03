@@ -26,9 +26,10 @@
 import requests
 
 # bundled with Python
-import webbrowser
 import json
+import random
 import urllib
+import webbrowser
 
 # local modules
 import settings
@@ -40,9 +41,9 @@ import settings
 headers = {"Content-Type": "application/json; charset=UTF-8", "X-Accept": "application/json"}
 
 def get(params):
-  return requests.post('https://getpocket.com/v3/get', headers=headers, params=params) # should turn this into another function and keep it DRY
+  return requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
 
-def post(actions_escaped, consumer_key, pocket_access_token):
+def send(actions_escaped, consumer_key, pocket_access_token):
   # POST changes to tags
   requests.post('https://getpocket.com/v3/send?actions=' + actions_escaped + '&access_token=' + pocket_access_token + '&consumer_key=' + consumer_key)
   return 'done'
@@ -106,9 +107,33 @@ def get_tbr(consumer_key, pocket_access_token, archive_tag):
   request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
   return request.json()
 
-def lucky_dip():
-  # choose items to put back into the user List
-  pass
+# choose items to put back into the user List
+def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, minimum_videos, minimum_images, num_longreads, longreads_wordcount):
+  
+  # get everything with the archive_tag
+  params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
+  request = get(params)
+  tbr = request.json()['list']
+
+  # get a random selection
+  selection = random.sample(list(tbr), items_per_cycle)
+  
+  # Now un-archive everything in the selection
+  actions = []
+  
+  for item in selection:
+    # item_id = item_list[item]['item_id']
+    item_readd = {"item_id": item, "action": "readd"}
+    actions.append(item_readd)
+    # remove archive_tag as well, otherwise the item will keep appearing after it's read and archived by the user
+    item_detag = {"item_id": item, "action": "tags_remove", "tags": archive_tag}
+    actions.append(item_detag)
+  # stringify
+  items_string = json.dumps(actions)
+  escaped = urllib.parse.quote(items_string)
+
+  # re-add items
+  return send(escaped, consumer_key, pocket_access_token)
 
 def purge_tags():
   # remove all tags from all items 
@@ -170,7 +195,7 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
   # now URL encode it using urllib
   actions_escaped = urllib.parse.quote(actions_string)
   # post update to tags
-  post(actions_escaped, consumer_key, pocket_access_token)
+  send(actions_escaped, consumer_key, pocket_access_token)
 
   # Now archive everything
   archive_actions = []
@@ -185,4 +210,4 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
   archive_escaped = urllib.parse.quote(archive_items_string)
 
   # archive items
-  return post(archive_escaped, consumer_key, pocket_access_token)
+  return send(archive_escaped, consumer_key, pocket_access_token)

@@ -1,7 +1,7 @@
 pocket_consumer_key = ''
 pocket_redirect_uri = 'https://hugh.li/success'
 items_per_cycle = 10
-archive_tag = 'TBR' # apply this tag before archiving items
+archive_tag = 'TBR' # apply this tag before archiving items. This is case-insensitive and Pocket will always downcase it
 ignore_faves = True # don't archive items that are favorited
 replace_all_tags = False # if set to True this will replace ALL tags on an item in the user's List with the archive_tag and anything in exclude_tags. If set to False, the archive tag is still added but any existing tags are retained.
 exclude_tags = ['GLAM Blog Club', 'aus glam blogs', 'empocketer'] # if replace_all_tags is set to True, you can still retain particular tags by adding them to the exclude_tags list
