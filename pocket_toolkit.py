@@ -33,6 +33,20 @@ import urllib
 # local modules
 import settings
 
+
+# request functions (make this a proper class object later)
+
+# Pocket expects particular HTTP headers to send and receive JSON
+headers = {"Content-Type": "application/json; charset=UTF-8", "X-Accept": "application/json"}
+
+def get(params):
+  return requests.post('https://getpocket.com/v3/get', headers=headers, params=params) # should turn this into another function and keep it DRY
+
+def post(actions_escaped, consumer_key, pocket_access_token):
+  # POST changes to tags
+  requests.post('https://getpocket.com/v3/send?actions=' + actions_escaped + '&access_token=' + pocket_access_token + '&consumer_key=' + consumer_key)
+  return 'done'
+
 # ----------------
 # Create app
 # ----------------
@@ -41,9 +55,6 @@ import settings
 # Go to https://getpocket.com/developer and click 'CREATE NEW APP'
 # Complete the form: you will need all permissions, and the platform should be 'Desktop (other)'
 # Your new app will show a 'consumer key', which you need to paste into the first line in settings.py
-
-# Pocket expects particular HTTP headers to send and receive JSON
-headers = {"Content-Type": "application/json; charset=UTF-8", "X-Accept": "application/json"}
 
 # ----------------
 # Authorise
@@ -84,10 +95,6 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
     with open("settings.py", "a") as settings_file:
       settings_file.write("pocket_access_token = " + "'" + access_token + "'\n")
 
-def choose():
-  # choose items to put back into the user List
-  pass
-
 def get_list(consumer_key, pocket_access_token):
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token}
   request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
@@ -99,31 +106,83 @@ def get_tbr(consumer_key, pocket_access_token, archive_tag):
   request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
   return request.json()
 
+def lucky_dip():
+  # choose items to put back into the user List
+  pass
+
 def purge_tags():
   # remove all tags from all items 
   # optionally in List only, archive only or both
   # optionally keep certain tags
   pass
 
-def stash(consumer_key, pocket_access_token, archive_tag, fave):
-  if fave:
+"""
+Stash
+
+stash(consumer_key, pocket_access_token, archive_tag [, retain_tags] [, favorite])
+
+Stash applies the archive_tag to all items in the User List, then archives everything in the List.
+
+Options:
+
+retain_tags - a list of tags that should not be removed from items when adding the archive_tag. If you don't want to retain any tags, this value should be False. Defaults to False
+favorite - boolean indicating whether to ignore (i.e. leave in the user list) favorite items. Defaults to True
+
+"""
+
+def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite):
+  if favorite:
     params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "favorite": "0"}
   else:
     params = {"consumer_key": consumer_key, "access_token": pocket_access_token}
-  request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
+  
+  # GET the list
+  request = get(params)
   list_items = request.json()
 
-  # replace all tags with just the archive tag/s
+  # FIXME: temporarily make replace_all_tags False until retain_tags functionality works
+  replace_all_tags = False
+
   actions = []
   item_list = list_items['list']
   for item in item_list:
     item_id = item_list[item]['item_id']
-    action = {"action": "tags_replace", "item_id": item_id, "tags": archive_tag}
+    # set up the action dict
+    action = {"item_id": item_id}
+    if replace_all_tags: # temporarily always False until the functionality below can work
+      action["action"] = "tags_replace"
+      # are we retaining any tags?
+      if retain_tags: # retain_tags should either be False or a list
+        # we need to check whether this item actually contains any of the retain_tags
+        # FIXME: this won't work because Pocket doesn't actually return "tags", despite the API documentation
+        # TODO: maybe we process these first? i.e. use GET tag_name for each retain_tag, tag them with the archive_tag and then archive? But even then we don't know whether they contain multiple tags to keep.
+        tags_to_keep = set(retain_tags).intersection(item_list[item]['tags'])
+        action["tags"] = tags_to_keep
+      else:
+        action["tags"] = archive_tag
+    else: # just add the archive tag
+      action["action"] = "tags_add"
+      action["tags"] = archive_tag
+    # action is now completed, add it to the list     
     actions.append(action)
 
   actions_string = json.dumps(actions)
   # now URL encode it using urllib
   actions_escaped = urllib.parse.quote(actions_string)
-  # POST
-  requests.post('https://getpocket.com/v3/send?actions=' + actions_escaped + '&access_token=' + pocket_access_token + '&consumer_key=' + consumer_key)
-  return 'done'
+  # post update to tags
+  post(actions_escaped, consumer_key, pocket_access_token)
+
+  # Now archive everything
+  archive_actions = []
+  
+  for item in item_list:
+    item_id = item_list[item]['item_id']
+    item_action = {"item_id": item_id, "action": "archive"}
+    archive_actions.append(item_action)
+
+  # stringify
+  archive_items_string = json.dumps(archive_actions)
+  archive_escaped = urllib.parse.quote(archive_items_string)
+
+  # archive items
+  return post(archive_escaped, consumer_key, pocket_access_token)
