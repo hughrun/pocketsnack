@@ -40,7 +40,7 @@ Returns items from the archive to the list, and removes the archive tag. The num
 
 ### stash
 
-Adds the archive tag to everything in your list, and then archives them. Depending on the value of `ignore_faves` in `settings.py` favorited \[sic] items may remain in the List.
+Adds the archive tag to everything in your list, and then archives them. Depending on the value of `ignore_faves` and `ignore_tags` in `settings.py` favorited \[sic] items may remain in the List.
 
 ## Bugs and suggestions
 
