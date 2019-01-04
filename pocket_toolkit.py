@@ -175,10 +175,9 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
   actions = []
   item_list = list_items['list']
   for item in item_list:
-    # item_id = item_list[item]['item_id']
     # set up the action dict
-    action = {"item_id": item}
-    if replace_all_tags: # temporarily always False until the functionality below can work
+    action = {"item_id": item} # item is the ID because it's the dict key
+    if replace_all_tags:
       action["action"] = "tags_replace"
       # are we retaining any tags?
       if retain_tags: # retain_tags should either be False or a Set
@@ -187,23 +186,18 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
           for tag in item_list[item]['tags']:
             item_tags.append(tag)
           # find the common tags between retain_tags and item_tags
-          # to do this we need retain_tags to be a set, but you can't JSON serialise
-          # a set, so we need to turn the result into a list afterwards
+          # to do this we need retain_tags to be a set, but you can't JSON serialise a set, so we need to turn the result into a list afterwards
           tags_to_keep = list(retain_tags.intersection(item_tags))
-          # don't forget to keep the archive_tag!
+          # don't forget to add the archive_tag!
           tags_to_keep.append(archive_tag)
           action["tags"] = tags_to_keep
+      # Anything that is still in the user list can be presumed to not have been read
+      # when they read it they will archive it (without the archive_tag because lucky_dip removes it)
         else:
-          # FIXME: 
-          # if there are no tags at all, add the archive tag
-          # this is circular, it means nothing will ever be fully archived.
-          # if they just didn't get to it they want the archive tag to stay
-          # but removing it every time manually is a PITA
-          # Maybe it should be manually *added* and only archived if it has the archive_tag?
           action["tags"] = archive_tag
       else:
         action["tags"] = archive_tag
-    else: # just add the archive tag
+    else: # if replace_all_tags is False, just add the archive tag without removing any tags
       action["action"] = "tags_add"
       action["tags"] = archive_tag
     # action is now completed, add it to the list     
