@@ -87,7 +87,7 @@ if len(arguments) > 1:
     print(stash)
 
   if arguments[1] == 'lucky_dip':
-    dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.minimum_videos, settings.minimum_images, settings.num_longreads, settings.longreads_wordcount)
+    dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.num_videos, settings.num_images, settings.num_longreads, settings.longreads_wordcount)
     print(dip)
 
   if arguments[1] == 'test':

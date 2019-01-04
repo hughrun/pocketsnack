@@ -108,12 +108,7 @@ def get_tbr(consumer_key, pocket_access_token, archive_tag):
   return request.json()
 
 # choose items to put back into the user List
-def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, minimum_videos, minimum_images, num_longreads, longreads_wordcount):
-  
-  # get everything with the archive_tag
-  params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
-  request = get(params)
-  tbr = request.json()['list']
+def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount):
 
   # This function is called below to un-archive everything in the selection
   def readd(selection):
@@ -130,10 +125,54 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, m
     # re-add items
     return send(escaped, consumer_key, pocket_access_token)
 
+  # get everything with the archive_tag
+  params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
+  request = get(params)
+  tbr = request.json()['list']
 
   # before we go any further, make sure there actually is something in the TBR list!
   if len(tbr) > 0:
-    # find how many longreads are in the archive
+
+    # just to make it clearer, and create a copy
+    items_needed = items_per_cycle
+
+    #####################
+    # filtering formats
+    #####################
+    videos = []
+    images = []
+
+    for item in tbr:
+      if num_videos and 'has_video' in tbr[item]:
+        if tbr[item]['has_video'] == '2':
+          # it's a video
+          videos.append(item)
+      if num_images and 'has_image' in tbr[item]:
+        if tbr[item]['has_image'] == '2':
+          # it's an image
+          images.append(item)
+    
+    if num_videos:
+      # don't select more than the total items_needed
+      num_videos = num_videos if num_videos <= items_needed else items_needed
+      selected_videos = videos if len(videos) <= num_videos else random.sample(videos, num_videos)
+      # re-add the videos
+      if len(selected_videos) > 0:
+        readd(selected_videos)
+        # adjust the total items we need to look for
+        items_needed -= len(selected_videos)
+
+    if num_images:
+      num_images = num_images if num_images <= items_needed else items_needed
+      selected_images = images if len(images) <= num_images else random.sample(images, num_images)
+      if len(selected_images) > 0:
+        readd(selected_images)
+        # adjust the total items we need to look for
+        items_needed -= len(selected_images)
+
+    #####################
+    # filtering longreads
+    #####################
     if num_longreads:
       long_reads = []
       for item in tbr:
@@ -145,7 +184,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, m
       
       total_longreads = len(long_reads)
       total_shortreads = len(tbr) - total_longreads
-      required_shortreads = items_per_cycle - num_longreads
+      required_shortreads = items_needed - num_longreads
       # check whether we have enough of each
       enough_longreads = total_longreads >= num_longreads
       enough_shortreads = total_shortreads >= required_shortreads
@@ -153,13 +192,14 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, m
       # if there are enough longreads AND enough shortreads, go ahead
       if enough_longreads and enough_shortreads:
         # select random longreads
-        selected_longreads = (random.sample(long_reads, num_longreads))
+        # note we need to check whether any are actually required at this point, otherwise we run the risk of items_needed becoming a negative number 
+        selected_longreads = (random.sample(long_reads, num_longreads)) if required_shortreads > 0 else []
         # add random shortreads
         # first we need to remove the longreads from tbr:
         for article in long_reads:
           tbr.pop(article, None)
-        # now grab a random selection to fill our items_per_cycle quota
-        selected_shortreads = random.sample(list(tbr), required_shortreads)
+        # now grab a random selection to fill our items_needed quota
+        selected_shortreads = random.sample(list(tbr), required_shortreads) if required_shortreads > 0 else []
         # add the two lists together
         selection = selected_longreads + selected_shortreads  
         readd(selection)
@@ -171,12 +211,12 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, m
         # first we need to remove the longreads from tbr:
         for article in long_reads:
           tbr.pop(article, None)
-        # now grab a random selection to fill our items_per_cycle quota
-        difference = items_per_cycle - num_longreads
+        # now grab a random selection to fill our items_needed quota
+        difference = items_needed - num_longreads
         # make sure you have enough of the new total
         enough_difference = difference <= total_shortreads
         if enough_difference:
-          selected_shortreads = random.sample(list(tbr), difference)
+          selected_shortreads = random.sample(list(tbr), difference) if difference > 0 else []
         # if there are too few longreads AND too few shortreads just grab what shortreads you have
         else:
           selected_shortreads = list(tbr) # note this is the new tbr after we popped the longreads
@@ -191,12 +231,12 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, m
           tbr.pop(article, None)
         # the new tbr is now entirely shortreads
         selected_shortreads = list(tbr)
-        # now grab a random selection of long reads to fill our items_per_cycle quota
-        difference = items_per_cycle - total_shortreads
+        # now grab a random selection of long reads to fill our items_needed quota
+        difference = items_needed - total_shortreads
         # make sure you have enough of the new total
         enough_difference = difference <= total_longreads
         if enough_difference:
-          selected_longreads = random.sample(long_reads, difference)
+          selected_longreads = random.sample(long_reads, difference) if difference > 0 else []
         # if there are too few longreads AND too few shortreads just grab what longreads you have
         else:
           selected_longreads = long_reads
@@ -208,9 +248,12 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, m
         readd(list(tbr))
     else: # if num_longreads is False or 0 (which are the same thing)
       # check how many items in total there are in the TBR list
-      # if there are fewer than items_per_cycle, just return all of them, otherwise get a random selection
-      selection = list(tbr) if len(tbr) < items_per_cycle else random.sample(list(tbr), items_per_cycle)
-      readd(selection)  
+      # if there are fewer than items_needed, just return all of them, otherwise get a random selection
+      if items_needed > 0:
+        selection = list(tbr) if len(tbr) < items_needed else random.sample(list(tbr), items_needed)
+        readd(selection)  
+  
+  # else if there's nothing tagged with the archive_tag 
   else:
     return 'Nothing to be read!'
 

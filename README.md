@@ -36,7 +36,7 @@ Same as _archive_ but for your list instead of your archive.
 
 ### lucky_dip
 
-Returns items from the archive to the list, and removes the archive tag. The number of items returned is determined by `items_per_cycle` in `settings.py`.
+Returns items from the archive to the list, and removes the archive tag. The number of items returned is determined by `items_per_cycle` in `settings.py`. Note that if `num_videos` and `num_images` add up to more than `items_per_cycle`, _lucky_dip_ will only return the total specified in `items_per_cycle`. Videos take precedence.
 
 ### stash
 
