@@ -258,6 +258,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
     return 'Nothing to be read!'
 
 def purge_tags():
+  # TODO:
   # remove all tags from all items 
   # optionally in List only, archive only or both
   # optionally keep certain tags?
@@ -277,7 +278,8 @@ favorite - boolean indicating whether to ignore (i.e. leave in the user list) fa
 
 """
 
-def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite):
+def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags):
+  # if ignore_faves is set to True, don't get favorite items
   if favorite:
     params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread", "favorite": "0"}
   else:
@@ -286,50 +288,53 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
   # GET the list
   request = get(params)
   list_items = request.json()
-
   actions = []
   item_list = list_items['list']
+  # copy items_list so we can alter the copy whilst iterating through the original
+  items_to_stash = dict(item_list)
   for item in item_list:
-    # set up the action dict
-    action = {"item_id": item} # item is the ID because it's the dict key
-    if replace_all_tags:
-      action["action"] = "tags_replace"
+    item_tags = []
+    if 'tags' in item_list[item]:
+      for tag in item_list[item]['tags']:
+        item_tags.append(tag)
+
+    # filter out any items with the ignore tags before dealing with the rest
+    if len(ignore_tags) > 0 and len(ignore_tags.intersection(item_tags)) > 0:
+        # pop it out of the items_to_stash
+        items_to_stash.pop(item, None)
+    elif replace_all_tags:
+          # set up the action dict
+      action = {"item_id": item, "action": "tags_replace"} # item is the ID because it's the dict key
       # are we retaining any tags?
       if retain_tags: # retain_tags should either be False or a Set
-        item_tags = []
-        if 'tags' in item_list[item]:
-          for tag in item_list[item]['tags']:
-            item_tags.append(tag)
-          # find the common tags between retain_tags and item_tags
-          # to do this we need retain_tags to be a set, but you can't JSON serialise a set, so we need to turn the result into a list afterwards
-          tags_to_keep = list(retain_tags.intersection(item_tags))
-          # don't forget to add the archive_tag!
-          tags_to_keep.append(archive_tag)
-          action["tags"] = tags_to_keep
+        # find the common tags between retain_tags and item_tags
+        # to do this we need retain_tags to be a set, but you can't JSON serialise a set, so we need to turn the result into a list afterwards
+        tags_to_keep = list(retain_tags.intersection(item_tags))
+        # don't forget to add the archive_tag!
+        tags_to_keep.append(archive_tag)
+        action["tags"] = tags_to_keep
       # Anything that is still in the user list can be presumed to not have been read
       # when they read it they will archive it (without the archive_tag because lucky_dip removes it)
-        else:
-          action["tags"] = archive_tag
       else:
         action["tags"] = archive_tag
+      actions.append(action)
     else: # if replace_all_tags is False, just add the archive tag without removing any tags
-      action["action"] = "tags_add"
+      action = {"item_id": item, "action": "tags_add"} # add new tag rather than replacing all of them
       action["tags"] = archive_tag
-    # action is now completed, add it to the list     
-    actions.append(action)
+      actions.append(action)
+      
 
   actions_string = json.dumps(actions)
   # now URL encode it using urllib
   actions_escaped = urllib.parse.quote(actions_string)
   # post update to tags
-  send(actions_escaped, consumer_key, pocket_access_token) # this appears to be acting on EVERYTHING, not just the stuff in the list
+  send(actions_escaped, consumer_key, pocket_access_token)
 
   # Now archive everything
   archive_actions = []
   
-  for item in item_list:
-    item_id = item_list[item]['item_id']
-    item_action = {"item_id": item_id, "action": "archive"}
+  for item in items_to_stash:
+    item_action = {"item_id": item, "action": "archive"}
     archive_actions.append(item_action)
 
   # stringify

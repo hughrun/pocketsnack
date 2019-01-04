@@ -83,7 +83,7 @@ if len(arguments) > 1:
     print('The TBR archive has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')    
 
   if arguments[1] == 'stash':
-    stash = pt.stash(consumer_key, settings.pocket_access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves)
+    stash = pt.stash(consumer_key, settings.pocket_access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves, settings.ignore_tags)
     print(stash)
 
   if arguments[1] == 'lucky_dip':
