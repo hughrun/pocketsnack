@@ -94,4 +94,4 @@ if len(arguments) > 1:
     result = pt.test(consumer_key, settings.pocket_access_token)
     print(result)
 else:
-  print('no args')
+  print('Whoops, you forgot to add an "argument". If you have not run anything yet, start with "python3 main.py authorise"')

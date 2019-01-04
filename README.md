@@ -1,22 +1,50 @@
 # pocket-snack
 When your Pocket list is overwhelming, pocket-snack lets you see just what you can read today
 
-The basic idea is that each time the script runs it moves everything in `My List` to `Archive` with a `TBR` tag, then randomly selects X number of items to go back into `My List` so that instead of an overwhelming number of things to be read, you just have the number you can comfortably expect to read per cycle (day, week etc).
+The basic idea is that each time the script runs it moves everything in `My List` to `Archive` with a `tbr` tag, then randomly selects X number of items to go back into `My List` so that instead of an overwhelming number of things to be read, you just have the number you can comfortably expect to read per cycle (day, week etc).
 
-This is very much work in progress, but you can play with the basic functionality now.
+This is a work in progress, but the basic functionality should be working.
+
+## Getting started
+
+### tl;dr
+
+1. copy settings-example.py to settings.py
+2. create Pocket app and paste consumer key into settings.py
+3. run `python3 main.py authorise`
+
+### Dependencies
+You will need Python 3.x installed. These instructions assume you are using a Unix-like (Linux, BSD, MacOS) operating system.
+
+The following Python modules need to be installed:
+
+* requests
+
+You should be able to install modules using pip with `pip3 install [module name]`
+
+### Settings
+
+You will need to copy settings-example.py to a new file called settings.py before you start. You can do this however you like, but from the command line you could use `cp settings-example.py settings.py`.
+
+You can adjust most settings, but the defaults should be reasonable for most users.
+
+### Creating a Pocket consumer key for your app
+1. Log in to Pocket in a web browser
+2. Go to https://getpocket.com/developer and click 'CREATE NEW APP'
+3. Complete the form: you will need all permissions, and the platform should be 'Desktop (other)'
+4. Your new app will show a 'consumer key', which you need to paste into the first line in settings.py
+
+### Pocket access token
+
+Pocket uses OAuth to confirm that your app has permission from your user account to do stuff in your account. This means you need to authorise the app before you can do anything else. Once you have copied you app consumer key into settings.py, you should run `python3 main.py authorise` to get your token (see below).
+
+You should now have a line at the bottom of settings.py saying something like `pocket_access_token = 'aa11bb-zz9900xx'`
 
 ## Usage
 
 To run, use `python3 main.py [command]`
 
 If you're using it regularly, you probably want to run `python3 main.py stash` followed by `python3 main.py lucky_dip`
-
-## Creating an app in Pocket
-
-1. Log in to Pocket in a web browser
-2. Go to https://getpocket.com/developer and click 'CREATE NEW APP'
-3. Complete the form: you will need all permissions, and the platform should be 'Desktop (other)'
-4. Your new app will show a 'consumer key', which you need to paste into the first line in settings.py
 
 ## commands
 
@@ -28,7 +56,7 @@ This tells you how many items are in your archive and how many of them are 'long
 
 This has an 's', not a 'z'.
 
-You need this to authorise your app. Everything else works exclusively on the command line, but _authorise_ needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, and add the token to `settings.py`.
+You need this to authorise your app. Everything else works exclusively on the command line, but _authorise_ needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, wait for you to confirm that you have completed the authorisation (by typing 'done') and then add the token to `settings.py`.
 
 ### list
 
@@ -40,7 +68,7 @@ Returns items from the archive to the list, and removes the archive tag. The num
 
 ### stash
 
-Adds the archive tag to everything in your list, and then archives them. Depending on the value of `ignore_faves` and `ignore_tags` in `settings.py` favorited \[sic] items may remain in the List.
+Adds the archive tag to everything in your list, and then archives them. Depending on the value of `ignore_faves` and `ignore_tags` in `settings.py` some items may remain in the List.
 
 ## Bugs and suggestions
 

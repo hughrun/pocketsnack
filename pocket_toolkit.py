@@ -94,7 +94,7 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
     # Assign the access token to a parameter called access_token
     access_token = res['access_token']
     with open("settings.py", "a") as settings_file:
-      settings_file.write("pocket_access_token = " + "'" + access_token + "'\n")
+      settings_file.write("\npocket_access_token = " + "'" + access_token + "'\n")
 
 def get_list(consumer_key, pocket_access_token):
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token}

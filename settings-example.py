@@ -1,4 +1,4 @@
-pocket_consumer_key = ''
+pocket_consumer_key = '' # paste the 'consumer key' from your Pocket app between the quotes here
 pocket_redirect_uri = 'https://hugh.li/success'
 items_per_cycle = 10 # integer
 archive_tag = 'tbr' # apply this tag before archiving items. This is case-insensitive and Pocket will always downcase it
@@ -10,4 +10,3 @@ longreads_wordcount = 3000 # integer - if there are more than this many words, t
 num_videos = None # if you change this to an integer this many items_per_cycle will be videos (if there are any videos in your list)
 num_images = None # if you change this to an integer this many items_per_cycle will be images (if there are any images in your list)
 num_longreads = 2 # if this is an integer this many items_per_cycle will be longreads (if there are any longreads in your list). If all your items are longreads you will still get the total items_per_cycle. Change to False if you don't want to filter longreads
-# ensure the last line is blank so that authorisation token is stored correctly
