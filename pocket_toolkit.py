@@ -115,19 +115,10 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, m
   request = get(params)
   tbr = request.json()['list']
 
-  # before we go any further, make sure there actually is something in the TBR list!
-  if len(tbr) > 0:
-    # get a random selection
-
-    # check how many there are in the TBR list
-    # if there are fewer than items_per_cycle, just return all of them
-    selection = list(tbr) if len(tbr) < items_per_cycle else random.sample(list(tbr), items_per_cycle)
-    
-    # Now un-archive everything in the selection
+  # This function is called below to un-archive everything in the selection
+  def readd(selection):
     actions = []
-    
     for item in selection:
-      # item_id = item_list[item]['item_id']
       item_readd = {"item_id": item, "action": "readd"}
       actions.append(item_readd)
       # remove archive_tag as well, otherwise the item will keep appearing after it's read and archived by the user
@@ -136,9 +127,90 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, m
     # stringify
     items_string = json.dumps(actions)
     escaped = urllib.parse.quote(items_string)
-
     # re-add items
     return send(escaped, consumer_key, pocket_access_token)
+
+
+  # before we go any further, make sure there actually is something in the TBR list!
+  if len(tbr) > 0:
+    # find how many longreads are in the archive
+    if num_longreads:
+      long_reads = []
+      for item in tbr:
+        # is it a long read?
+        if 'word_count' in tbr[item]:
+          words = int(tbr[item]['word_count'])
+          if words > longreads_wordcount:
+            long_reads.append(item) # we only need to append the item_id
+      
+      total_longreads = len(long_reads)
+      total_shortreads = len(tbr) - total_longreads
+      required_shortreads = items_per_cycle - num_longreads
+      # check whether we have enough of each
+      enough_longreads = total_longreads >= num_longreads
+      enough_shortreads = total_shortreads >= required_shortreads
+
+      # if there are enough longreads AND enough shortreads, go ahead
+      if enough_longreads and enough_shortreads:
+        # select random longreads
+        selected_longreads = (random.sample(long_reads, num_longreads))
+        # add random shortreads
+        # first we need to remove the longreads from tbr:
+        for article in long_reads:
+          tbr.pop(article, None)
+        # now grab a random selection to fill our items_per_cycle quota
+        selected_shortreads = random.sample(list(tbr), required_shortreads)
+        # add the two lists together
+        selection = selected_longreads + selected_shortreads  
+        readd(selection)
+      # If there are too few longreads but enough shortreads, take what LR we have and make up the difference
+      elif enough_shortreads:
+        # select all of the longreads
+        selected_longreads = long_reads
+        # add random shortreads
+        # first we need to remove the longreads from tbr:
+        for article in long_reads:
+          tbr.pop(article, None)
+        # now grab a random selection to fill our items_per_cycle quota
+        difference = items_per_cycle - num_longreads
+        # make sure you have enough of the new total
+        enough_difference = difference <= total_shortreads
+        if enough_difference:
+          selected_shortreads = random.sample(list(tbr), difference)
+        # if there are too few longreads AND too few shortreads just grab what shortreads you have
+        else:
+          selected_shortreads = list(tbr) # note this is the new tbr after we popped the longreads
+        # add the two lists together
+        selection = selected_longreads + selected_shortreads 
+        readd(selection)
+      # if there are enough longreads but too few shortreads, use all the shortreads and make up the difference with longreads
+      elif enough_longreads:
+        # add all the shortreads there are
+        # first we need to remove the longreads from tbr:
+        for article in long_reads:
+          tbr.pop(article, None)
+        # the new tbr is now entirely shortreads
+        selected_shortreads = list(tbr)
+        # now grab a random selection of long reads to fill our items_per_cycle quota
+        difference = items_per_cycle - total_shortreads
+        # make sure you have enough of the new total
+        enough_difference = difference <= total_longreads
+        if enough_difference:
+          selected_longreads = random.sample(long_reads, difference)
+        # if there are too few longreads AND too few shortreads just grab what longreads you have
+        else:
+          selected_longreads = long_reads
+        # add the two lists together
+        selection = selected_longreads + selected_shortreads
+        readd(selection)
+      else:
+        # if we get to here there aren't enough of either, so we should just return everything
+        readd(list(tbr))
+    else: # if num_longreads is False or 0 (which are the same thing)
+      # check how many items in total there are in the TBR list
+      # if there are fewer than items_per_cycle, just return all of them, otherwise get a random selection
+      selection = list(tbr) if len(tbr) < items_per_cycle else random.sample(list(tbr), items_per_cycle)
+      readd(selection)  
   else:
     return 'Nothing to be read!'
 
