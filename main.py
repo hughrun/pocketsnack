@@ -49,7 +49,8 @@ if __name__ == '__main__':
     
     if arguments[1] == 'authorise':
       # Run authorise once first to retrieve a pocket_access_token
-      pt.authorise(consumer_key, redirect_uri)
+      auth = pt.authorise(consumer_key, redirect_uri)
+      print(auth)
 
     if arguments[1] == "list":
       # Retrieve info about the user's list
@@ -95,4 +96,4 @@ if __name__ == '__main__':
       result = pt.test(consumer_key, settings.pocket_access_token)
       print(result) 
   else:
-    print('Whoops, you forgot to add an "argument". If you have not run anything yet, start with "python3 main.py authorise"')
+    print('Whoops, you forgot to add an "argument". If you have not run anything yet, start with "pocketsnack authorise"')

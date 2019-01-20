@@ -11,10 +11,10 @@ This is a work in progress, but the basic functionality should be working.
 
 1. copy settings-example.py to settings.py
 2. create Pocket app and paste consumer key into settings.py
-3. run `python3 main.py authorise`
+3. run `bash install.sh` and select '1' at the prompt
 
 ### Dependencies
-You will need Python 3.x installed. These instructions assume you are using a Unix-like (Linux, BSD, MacOS) operating system.
+You will need Python 3.x installed and it should be called by `python3`. These instructions assume you are using a Unix-like (Linux, BSD, MacOS) operating system.
 
 The following Python modules need to be installed:
 
@@ -36,15 +36,15 @@ You can adjust most settings, but the defaults should be reasonable for most use
 
 ### Pocket access token
 
-Pocket uses OAuth to confirm that your app has permission from your user account to do stuff in your account. This means you need to authorise the app before you can do anything else. Once you have copied you app consumer key into settings.py, you should run `python3 main.py authorise` to get your token (see below).
+Pocket uses OAuth to confirm that your app has permission from your user account to do stuff in your account. This means you need to authorise the app before you can do anything else. Once you have copied you app consumer key into settings.py, you should run `pocketsnack authorise` to get your token (see below).
 
 You should now have a line at the bottom of settings.py saying something like `pocket_access_token = 'aa11bb-zz9900xx'`
 
 ## Usage
 
-To run, use `python3 main.py [command]`
+To run, use `pocketsnack [command]`
 
-If you're using it regularly, you probably want to run `python3 main.py stash` followed by `python3 main.py lucky_dip`
+If you're using it regularly, you probably want to run `pocketsnack stash` followed by `pocketsnack lucky_dip`. In an upcoming release this will be achieved by running the `refresh` command.
 
 ## commands
 
@@ -65,6 +65,14 @@ Same as _archive_ but for your list instead of your archive.
 ### lucky_dip
 
 Returns items from the archive to the list, and removes the archive tag. The number of items returned is determined by `items_per_cycle` in `settings.py`. Note that if `num_videos` and `num_images` add up to more than `items_per_cycle`, _lucky_dip_ will only return the total specified in `items_per_cycle`. Videos take precedence.
+
+### purge
+
+This doesn't exist yet. It will delete all tags except for those specified in a list.
+
+### refresh
+
+This doesn't exist yet. It will run `stash` followed by `lucky_dip`.
 
 ### stash
 
