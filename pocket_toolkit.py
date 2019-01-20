@@ -156,7 +156,8 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
     
     if num_videos:
       # don't select more than the total items_needed
-      num_videos = num_videos if num_videos <= items_needed else items_needed
+      # num_videos = num_videos if num_videos <= items_needed else items_needed
+      num_videos = items_needed if items_needed <= num_videos else num_videos
       selected_videos = videos if len(videos) <= num_videos else random.sample(videos, num_videos)
       # re-add the videos
       if len(selected_videos) > 0:
@@ -189,7 +190,6 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
       total_longreads = len(long_reads)
       total_shortreads = len(tbr) - total_longreads
       required_shortreads = items_needed - num_longreads
-      # check whether we have enough of each
       enough_longreads = total_longreads >= num_longreads
       enough_shortreads = total_shortreads >= required_shortreads
 
@@ -197,7 +197,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
       if enough_longreads and enough_shortreads:
         # select random longreads
         # note we need to check whether any are actually required at this point, otherwise we run the risk of items_needed becoming a negative number 
-        selected_longreads = (random.sample(long_reads, num_longreads)) if required_shortreads > 0 else []
+        selected_longreads = (random.sample(long_reads, num_longreads)) if items_needed > 0 else []
         # add random shortreads
         # first we need to remove the longreads from tbr:
         for article in long_reads:
@@ -218,7 +218,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         for article in long_reads:
           tbr.pop(article, None)
         # now grab a random selection to fill our items_needed quota
-        difference = items_needed - num_longreads
+        difference = items_needed - len(selected_longreads)
         # make sure you have enough of the new total
         enough_difference = difference <= total_shortreads
         if enough_difference:
@@ -240,7 +240,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         # the new tbr is now entirely shortreads
         selected_shortreads = list(tbr)
         # now grab a random selection of long reads to fill our items_needed quota
-        difference = items_needed - total_shortreads
+        difference = items_needed - len(selected_shortreads)
         # make sure you have enough of the new total
         enough_difference = difference <= total_longreads
         if enough_difference:
@@ -255,30 +255,35 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         readd(selection)
       else:
         # if we get to here there aren't enough of either, so we should just return everything
+        chosen['longreads'] = total_longreads
+        chosen['shortreads'] = total_shortreads        
         readd(list(tbr))
-        chosen['longreads'] = 'all'
-        chosen['shortreads'] = 'all'
     else: # if num_longreads is False or 0 (which are the same thing)
       # check how many items in total there are in the TBR list
       # if there are fewer than items_needed, just return all of them, otherwise get a random selection
       if items_needed > 0:
         selection = list(tbr) if len(tbr) < items_needed else random.sample(list(tbr), items_needed)
-        chosen['longreads'] = 'random'
-        chosen['shortreads'] = 'random'        
-        readd(selection)  
+        chosen['random'] = len(selection)
+        readd(selection)
   # return a total of what was moved into the list (faves, format etc)
     tot_videos = chosen['videos'] if 'videos' in chosen else None
     tot_images = chosen['images'] if 'images' in chosen else None
+    random_choice = 'random' in chosen
     tot_added = 0
     for v in chosen.values(): 
       tot_added += v
     remaining = available - tot_added
-    completed_message = 'Success! ' + str(tot_added) + ' items added to your reading list, including ' + str(chosen['longreads']) + ' long reads'
+    completed_message = 'Success! ' + str(tot_added) + ' items added to your reading list, including '
+    if random_choice:
+      completed_message += str(chosen['random']) + ' random articles, ' 
     if tot_images:
-      completed_message += ', ' + str(tot_images) + ' images'
+      completed_message += str(tot_images) + ' images, '
     if tot_videos:
-      completed_message += ', ' + str(tot_videos) + ' videos'
-    completed_message += ' and ' + str(chosen['shortreads']) + ' short reads. There are ' + str(remaining) + ' other articles remaining to be read.'
+      completed_message += str(tot_videos) + ' videos, '
+    if not random_choice:
+      completed_message += str(chosen['longreads']) + ' long reads and ' + str(chosen['shortreads']) + ' short reads, '
+    # add this to the end regardless
+    completed_message += 'with ' + str(remaining) + ' other items remaining to be read.'
     return completed_message
   # else if there's nothing tagged with the archive_tag
   else:
