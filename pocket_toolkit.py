@@ -156,7 +156,6 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
     
     if num_videos:
       # don't select more than the total items_needed
-      # num_videos = num_videos if num_videos <= items_needed else items_needed
       num_videos = items_needed if items_needed <= num_videos else num_videos
       selected_videos = videos if len(videos) <= num_videos else random.sample(videos, num_videos)
       # re-add the videos
@@ -319,6 +318,7 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
   # if ignore_faves is set to True, don't get favorite items
   if favorite:
     params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread", "favorite": "0"}
+    print('Skipping favorited items...')
   else:
     params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
   
@@ -379,8 +379,10 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
   archive_escaped = urllib.parse.quote(archive_items_string)
 
   # archive items
-  return send(archive_escaped, consumer_key, pocket_access_token)
-# TODO: return a list of what was stashed and, if relevant, what wasn't
+  send(archive_escaped, consumer_key, pocket_access_token)
+  # return a list of what was stashed and, if relevant, what wasn't
+  skipped_items = len(item_list) - len(items_to_stash)
+  return str(len(items_to_stash)) + ' items archived with "' + archive_tag + '" and ' + str(skipped_items) + ' items skipped due to retain tag.'
 
 def schedule():
   # TODO: set up a launchd file to run refresh()
