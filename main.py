@@ -42,6 +42,23 @@ consumer_key = settings.pocket_consumer_key
 redirect_uri = settings.pocket_redirect_uri
 archive_tag = settings.archive_tag
 
+# settings dict for refresh
+refresh_settings = [
+  consumer_key,
+  settings.pocket_access_token, 
+  archive_tag, 
+  settings.replace_all_tags, 
+  settings.retain_tags, 
+  settings.ignore_faves, 
+  settings.ignore_tags, 
+  settings.items_per_cycle, 
+  settings.num_videos, 
+  settings.num_images, 
+  settings.num_longreads, 
+  settings.longreads_wordcount
+]
+
+
 if __name__ == '__main__':
   arguments = sys.argv
 
@@ -52,7 +69,7 @@ if __name__ == '__main__':
       auth = pt.authorise(consumer_key, redirect_uri)
       print(auth)
 
-    if arguments[1] == "list":
+    elif arguments[1] == "list":
       # Retrieve info about the user's list
       response = pt.get_list(consumer_key, settings.pocket_access_token)
       items = response['list']
@@ -68,7 +85,7 @@ if __name__ == '__main__':
           longreads += 1
       print('The user list has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')
     
-    if arguments[1] == "archive":
+    elif arguments[1] == "archive":
       # Retrieve info about the user's list
       response = pt.get_tbr(consumer_key, settings.pocket_access_token, archive_tag)
       items = response['list']
@@ -84,16 +101,22 @@ if __name__ == '__main__':
           longreads += 1
       print('The TBR archive has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')    
 
-    if arguments[1] == 'stash':
+    elif arguments[1] == 'refresh':
+      refresh = pt.refresh(*refresh_settings)
+      print(refresh)
+    elif arguments[1] == 'stash':
       stash = pt.stash(consumer_key, settings.pocket_access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves, settings.ignore_tags)
       print(stash)
 
-    if arguments[1] == 'lucky_dip':
+    elif arguments[1] == 'lucky_dip':
       dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.num_videos, settings.num_images, settings.num_longreads, settings.longreads_wordcount)
       print(dip)
 
-    if arguments[1] == 'test':
+    elif arguments[1] == 'test':
       result = pt.test(consumer_key, settings.pocket_access_token)
-      print(result) 
+      print(result)
+
+    else:
+      print('Unknown argument.') # TODO: need to create a man page for this
   else:
     print('Whoops, you forgot to add an "argument". If you have not run anything yet, start with "pocketsnack authorise"')

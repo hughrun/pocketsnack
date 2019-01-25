@@ -28,6 +28,7 @@ import requests
 # bundled with Python
 import json
 import random
+import time
 import urllib
 import webbrowser
 
@@ -289,17 +290,25 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
   else:
     return 'Nothing to be read!'
 
-def purge_tags():
+def purge_tags(list, archive, keep_tags):
   # TODO:
   # remove all tags from all items 
   # optionally in List only, archive only or both
   # optionally keep certain tags?
   pass
 
-def refresh(args_here):
+def refresh(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount):
   # this is the job that should run regularly
-  # run stash then lucky_dip
-  pass
+  # wait for 15 seconds at the beginning to give waking machines a chance to connect to the internet before making the API call
+  print('Refreshing...')
+  time.sleep(15)
+  # run stash
+  print('Stashing...')
+  stash_msg = stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags)
+  # run lucky_dip
+  print('Running lucky dip...')
+  ld_message = lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount)
+  return stash_msg + '\n' + ld_message
 
 """
 Stash

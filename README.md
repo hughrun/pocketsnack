@@ -36,7 +36,7 @@ You can adjust most settings, but the defaults should be reasonable for most use
 
 ### Pocket access token
 
-Pocket uses OAuth to confirm that your app has permission from your user account to do stuff in your account. This means you need to authorise the app before you can do anything else. Once you have copied you app consumer key into settings.py, you should run `pocketsnack authorise` to get your token (see below).
+Pocket uses OAuth to confirm that your app has permission from your user account to do stuff in your account. This means you need to authorise the app before you can do anything else. Once you have copied you app consumer key into settings.py, you should run `pocketsnack authorise` to get your token (see below). However, it you use the install.sh bash script, this will run `authorise` for you.
 
 You should now have a line at the bottom of settings.py saying something like `pocket_access_token = 'aa11bb-zz9900xx'`
 
