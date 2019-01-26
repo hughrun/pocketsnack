@@ -1,7 +1,7 @@
 # pocket-snack
 When your Pocket list is overwhelming, pocket-snack lets you see just what you can read today
 
-The basic idea is that each time the script runs it moves everything in `My List` to `Archive` with a `tbr` tag, then randomly selects X number of items to go back into `My List` so that instead of an overwhelming number of things to be read, you just have the number you can comfortably expect to read per cycle (day, week etc).
+Each time the `refresh` command runs, it moves everything in `My List` to `Archive` with a particular tag, then randomly selects X number of items with that tag to go back into `My List` so that instead of an overwhelming number of things to be read, you just have the number you can comfortably expect to read per cycle (day, week etc).
 
 This is a work in progress, but the basic functionality should be working.
 
@@ -9,12 +9,12 @@ This is a work in progress, but the basic functionality should be working.
 
 ### tl;dr
 
-1. copy settings-example.py to settings.py
+1. copy `settings-example.py` to `settings.py`
 2. create Pocket app and paste consumer key into settings.py
-3. run `bash install.sh` and select '1' at the prompt
+3. run `bash install.sh` and follow the prompts
 
 ### Dependencies
-You will need Python 3.x installed and it should be called by `python3`. These instructions assume you are using a Unix-like (Linux, BSD, MacOS) operating system.
+You will need Python 3.x installed and it must be called by `python3`, rather than `python`. These instructions, and the install script, assume you are using a Unix-like (Linux, BSD, MacOS) operating system. Microsoft Windows is not currently supported.
 
 The following Python modules need to be installed:
 
@@ -24,9 +24,9 @@ You should be able to install modules using pip with `pip3 install [module name]
 
 ### Settings
 
-You will need to copy settings-example.py to a new file called settings.py before you start. You can do this however you like, but from the command line you could use `cp settings-example.py settings.py`.
+You will need to copy settings-example.py to a new file called settings.py before you start. You can do this however you like, but from the command line you could use `cp settings-example.py settings.py`, and then edit it with a text editor like `nano`.
 
-You can adjust most settings, but the defaults should be reasonable for most users.
+You can adjust most settings, but the defaults should be reasonable for most users. Check the comments in `settings.example.py` for an explanation of each setting.
 
 ### Creating a Pocket consumer key for your app
 1. Log in to Pocket in a web browser
@@ -36,15 +36,15 @@ You can adjust most settings, but the defaults should be reasonable for most use
 
 ### Pocket access token
 
-Pocket uses OAuth to confirm that your app has permission from your user account to do stuff in your account. This means you need to authorise the app before you can do anything else. Once you have copied you app consumer key into settings.py, you should run `pocketsnack authorise` to get your token (see below). However, it you use the install.sh bash script, this will run `authorise` for you.
+Pocket uses OAuth to confirm that your app has permission from your user account to do stuff in your account. This means you need to authorise the app before you can do anything else. Once you have copied you app consumer key into settings.py, when you run the `install.sh` bash script, this will run `authorise` for you. If you are doing everything manually you should run `pocketsnack authorise` to get your token (see below).
 
 You should now have a line at the bottom of settings.py saying something like `pocket_access_token = 'aa11bb-zz9900xx'`
 
 ## Usage
 
-To run, use `pocketsnack [command]`
+For most users you simply need to run `install.sh` and then forget about it. The install script will ask a series of questions, authorise your app, and optionally set up a daily task to refresh your list. In future you will have the option to do this weekly instead of daily.
 
-If you're using it regularly, you probably want to run `pocketsnack stash` followed by `pocketsnack lucky_dip`. In an upcoming release this will be achieved by running the `refresh` command.
+To run commands manually, use `pocketsnack [command]`
 
 ## commands
 
@@ -72,7 +72,7 @@ This doesn't exist yet. It will delete all tags except for those specified in a 
 
 ### refresh
 
-This doesn't exist yet. It will run `stash` followed by `lucky_dip`.
+Runs `stash` followed by `lucky_dip`. This is the command that is run by launchd or cron if you set it up using `install.sh`.
 
 ### stash
 
