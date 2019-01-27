@@ -19,11 +19,7 @@ You will need Python 3.x installed and it must be called by `python3`, rather th
 
 On MacOS the easiest thing to do is to [install Python 3 using Homebrew](https://docs.brew.sh/Homebrew-and-Python): `brew install python`.
 
-The following Python modules need to be installed:
-
-* requests
-
-You should be able to install modules using pip with `pip3 install [module name]`
+Then install the Python **requests** module using **pip**: `pip3 install requests`
 
 ### Settings
 
