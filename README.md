@@ -3,18 +3,21 @@ When your Pocket list is overwhelming, pocket-snack lets you see just what you c
 
 Each time the `refresh` command runs, it moves everything in `My List` to `Archive` with a particular tag, then randomly selects X number of items with that tag to go back into `My List` so that instead of an overwhelming number of things to be read, you just have the number you can comfortably expect to read per cycle (day, week etc).
 
-This is a work in progress, but the basic functionality should be working.
+This is a work in progress, but all functions described here should be working.
 
 ## Getting started
 
 ### tl;dr
 
-1. copy `settings-example.py` to `settings.py`
-2. create Pocket app and paste consumer key into settings.py
-3. run `bash install.sh` and follow the prompts
+1. install python 3 and the _requests_ module
+2. copy `settings-example.py` to `settings.py`
+3. create Pocket app and paste consumer key into settings.py
+4. run `bash install.sh` and follow the prompts
 
 ### Dependencies
 You will need Python 3.x installed and it must be called by `python3`, rather than `python`. These instructions, and the install script, assume you are using a Unix-like (Linux, BSD, MacOS) operating system. Microsoft Windows is not currently supported.
+
+On MacOS the easiest thing to do is to [install Python 3 using Homebrew](https://docs.brew.sh/Homebrew-and-Python): `brew install python`.
 
 The following Python modules need to be installed:
 
@@ -24,9 +27,9 @@ You should be able to install modules using pip with `pip3 install [module name]
 
 ### Settings
 
-You will need to copy settings-example.py to a new file called settings.py before you start. You can do this however you like, but from the command line you could use `cp settings-example.py settings.py`, and then edit it with a text editor like `nano`.
+You will need to copy **settings-example.py** to a new file called **settings.py** before you start. You can do this however you like, but from the command line you could use `cp settings-example.py settings.py`, and then edit it with a text editor like `nano`.
 
-You can adjust most settings, but the defaults should be reasonable for most users. Check the comments in `settings.example.py` for an explanation of each setting.
+You can adjust most settings, but the defaults in **settings-example.py** should be ok for most users. Check the comments in **settings.example.py** for an explanation of each setting.
 
 ### Creating a Pocket consumer key for your app
 1. Log in to Pocket in a web browser
@@ -42,9 +45,9 @@ You should now have a line at the bottom of settings.py saying something like `p
 
 ## Usage
 
-For most users you simply need to run `install.sh` and then forget about it. The install script will ask a series of questions, authorise your app, and optionally set up a daily task to refresh your list. In future you will have the option to do this weekly instead of daily.
+For most users you simply need to run `install.sh` and then forget about it. The install script will ask a series of questions, authorise your app, and optionally set up a daily task to refresh your list. On MacOS this is done via **launchd** and on Linux via **cron**. If you want to use cron instead of launchd on Mac, just choose 'Linux' when asked - but I wouldn't recommend it. In future you will have the option to do run the `refresh` task weekly instead of daily, and choose minutes as well as an hour of the day.
 
-To run commands manually, use `pocketsnack [command]`
+To run commands manually, use `pocketsnack [command]`.
 
 ## commands
 
@@ -80,4 +83,4 @@ Adds the archive tag to everything in your list, and then archives them. Dependi
 
 ## Bugs and suggestions
 
-Log an issue - but check the existing issues first in case it's already been/being dealt with.
+Please log an issue - but check the existing issues first in case it's already been/being dealt with.
