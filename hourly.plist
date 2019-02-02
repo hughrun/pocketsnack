@@ -21,5 +21,9 @@
     <key>Hour</key>
     <integer>6</integer> <!-- this line is changed by install.sh  -->
   </dict>
+  <key>StandardOutPath</key>
+  <string>/var/log/pocketsnack.log</string>
+  <key>StandardErrorPath</key>
+  <string>/var/log/pocketsnack.error.log</string>
 </dict>
 </plist>
