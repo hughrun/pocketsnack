@@ -41,11 +41,11 @@ You should now have a line at the bottom of settings.py saying something like `p
 
 ## Usage
 
-For most users you simply need to run `install.sh` and then forget about it. The install script will ask a series of questions, authorise your app, and optionally set up a daily task to refresh your list. On MacOS this is done via **launchd** and on Linux via **cron**. If you want to use cron instead of launchd on Mac, just choose 'Linux' when asked - but I wouldn't recommend it. 
+For most users you simply need to run `install.sh` and then forget about it. The install script will ask a series of questions, authorise your app, and optionally set up a daily or weekly task to refresh your list. On MacOS this is done via **launchd** and on Linux via **cron**. If you want to use cron instead of launchd on Mac, just choose 'Linux' when asked - but I wouldn't recommend it (read on for why).
 
 In both cases, `pocketsnack refresh` will run at the specified time. In the case of **cron**, this will only happen if the machine is up and logged on - e.g. a server. In the case of **launchd**, the script will be associated with your user account. If your machine is sleeping or your account logged out at the scheduled time, it will run immediately when you wake the machine up or log in. This allows you to set it for, e.g. 5am and be confident that when you open your Macbook at 7am the script will run and your Pocket account will refresh.
 
-In future you will have the option to do run the `refresh` task weekly instead of daily, and choose minutes as well as an hour of the day.
+If you use launchd, log files for stdout and errors will be created wherever you saved _pocketsnack_.
 
 To run commands manually, use `pocketsnack [command]`.
 
