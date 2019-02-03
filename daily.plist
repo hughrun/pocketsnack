@@ -10,9 +10,9 @@
     <string>/bin:/usr/bin:/usr/local/bin</string> <!-- this allows us to run scripts from /usr/local/bin  -->
   </dict>
   <key>StandardOutPath</key>
-  <string>/var/log/pocketsnack.log</string>
+  <string>PATH</string>
   <key>StandardErrorPath</key>
-  <string>/var/log/pocketsnack.error.log</string>  
+  <string>PATH</string>  
   <key>ProgramArguments</key>
   <array>
     <string>/usr/local/bin/pocketsnack</string>
@@ -24,6 +24,8 @@
     <integer>0</integer>
     <key>Hour</key>
     <integer>6</integer> <!-- this line is changed by install.sh  -->
+    <key>Weekday</key>
+    <integer>1</integer> <!-- this line is changed by install.sh  -->
   </dict>
 </dict>
 </plist>
