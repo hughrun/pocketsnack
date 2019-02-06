@@ -104,6 +104,7 @@ if __name__ == '__main__':
     elif arguments[1] == 'refresh':
       refresh = pt.refresh(*refresh_settings)
       print(refresh)
+
     elif arguments[1] == 'stash':
       stash = pt.stash(consumer_key, settings.pocket_access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves, settings.ignore_tags)
       print(stash)

@@ -46,8 +46,7 @@ def get(params):
 
 def send(actions_escaped, consumer_key, pocket_access_token):
   # POST changes to tags
-  requests.post('https://getpocket.com/v3/send?actions=' + actions_escaped + '&access_token=' + pocket_access_token + '&consumer_key=' + consumer_key)
-  return 'done'
+  return requests.post('https://getpocket.com/v3/send?actions=' + actions_escaped + '&access_token=' + pocket_access_token + '&consumer_key=' + consumer_key)
 
 # ----------------
 # Create app
@@ -349,8 +348,9 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
     if len(ignore_tags) > 0 and len(ignore_tags.intersection(item_tags)) > 0:
         # pop it out of the items_to_stash
         items_to_stash.pop(item, None)
+    # Now we process all the tags first, before we archive everything
     elif replace_all_tags:
-          # set up the action dict
+      # set up the action dict
       action = {"item_id": item, "action": "tags_replace"} # item is the ID because it's the dict key
       # are we retaining any tags?
       if retain_tags: # retain_tags should either be False or a Set
@@ -370,33 +370,49 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
       action["tags"] = archive_tag
       actions.append(action)
       
+  # Update the tags
+  # group into smaller chunks of 20 to avoid a 414 (URL too long) error
+  tag_chunks = [actions[i:i+20] for i in range(0, len(actions), 20)]
 
-  actions_string = json.dumps(actions)
-  # now URL encode it using urllib
-  actions_escaped = urllib.parse.quote(actions_string)
-  # post update to tags
-  send(actions_escaped, consumer_key, pocket_access_token)
+  # process each chunk
+  for i, chunk in enumerate(tag_chunks):
 
-  # Now archive everything
+    actions_string = json.dumps(chunk)
+    # now URL encode it using urllib
+    actions_escaped = urllib.parse.quote(actions_string)
+    print('Processing tags on ' + str(i*20) + ' to ' + str((i*20)+len(tag_chunks[i])) + ' of ' + str(len(items_to_stash)) + '...', end="", flush=True) # printing like this means the return callback is appended to the line
+    # post update to tags
+    update_tags = send(actions_escaped, consumer_key, pocket_access_token)
+    print(update_tags)
+    time.sleep(2) # don't fire off requests too quickly
+
+  # Now archive everything 
   archive_actions = []
   
   for item in items_to_stash:
     item_action = {"item_id": item, "action": "archive"}
     archive_actions.append(item_action)
 
-  # stringify
-  archive_items_string = json.dumps(archive_actions)
-  archive_escaped = urllib.parse.quote(archive_items_string)
+  print('archiving ' + str(len(archive_actions)) + ' items...' )
 
-  # archive items
-  send(archive_escaped, consumer_key, pocket_access_token)
+  # group into smaller chunks of 20 to avoid a 414 (URL too long) error
+  chunks = [archive_actions[i:i+20] for i in range(0, len(archive_actions), 20)]
+
+  # process each chunk
+  for i, chunk in enumerate(chunks):
+    # stringify
+    archive_items_string = json.dumps(chunk)
+    archive_escaped = urllib.parse.quote(archive_items_string)
+
+    # archive items
+    print('Archiving ' + str(i*20) + ' to ' + str((i*20)+len(chunks[i])) + ' of ' + str(len(items_to_stash)) + '...', end="", flush=True) # printing like this means the return callback is appended to the line
+    send_callback = send(archive_escaped, consumer_key, pocket_access_token)
+    print(send_callback)
+    time.sleep(2) # don't fire off requests too quickly
+
   # return a list of what was stashed and, if relevant, what wasn't
   skipped_items = len(item_list) - len(items_to_stash)
   return str(len(items_to_stash)) + ' items archived with "' + archive_tag + '" and ' + str(skipped_items) + ' items skipped due to retain tag.'
-
-def schedule():
-  # TODO: set up a launchd file to run refresh()
-  pass
 
 def test(consumer_key, pocket_access_token):
 
