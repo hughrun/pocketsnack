@@ -28,6 +28,7 @@
 import requests
 
 # bundled with Python
+from datetime import datetime
 import json
 import sys
 import urllib
@@ -102,6 +103,7 @@ if __name__ == '__main__':
       print('The TBR archive has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')    
 
     elif arguments[1] == 'refresh':
+      print('Refreshing at ' + datetime.now().strftime('%a %d %b %Y %H:%M'))
       refresh = pt.refresh(*refresh_settings)
       print(refresh)
 
