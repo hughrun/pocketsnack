@@ -10,3 +10,4 @@ longreads_wordcount = 3000 # integer - if there are more than this many words, t
 num_videos = None # if you change this to an integer this many items_per_cycle will be videos (if there are any videos in your list)
 num_images = None # if you change this to an integer this many items_per_cycle will be images (if there are any images in your list)
 num_longreads = 2 # if this is an integer this many items_per_cycle will be longreads (if there are any longreads in your list). If all your items are longreads you will still get the total items_per_cycle. Change to None or False if you don't want to filter longreads
+pocket_access_token = None
