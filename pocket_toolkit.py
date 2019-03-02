@@ -26,8 +26,10 @@
 import requests
 
 # bundled with Python
+import fileinput
 import json
 import random
+import re
 import time
 import urllib
 import webbrowser
@@ -93,8 +95,12 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
     print('Access token for ' + res['username'] + ' is ' + res['access_token'])
     # Assign the access token to a parameter called access_token
     access_token = res['access_token']
-    with open("settings.py", "a") as settings_file:
-      settings_file.write("\npocket_access_token = " + "'" + access_token + "'\n")
+    # replace the pocket_access_token line rather than just adding an extra at the end
+    settings_file = fileinput.FileInput("settings.py", inplace=True)
+    repl = "pocket_access_token = " + "'" + access_token + "'"
+    for line in settings_file:
+      line = re.sub('(pocket_access_token)+.*', repl, line)
+      print(line.rstrip())
     return 'Token added to settings.py - you are ready to use pocketsnack.'
 
 def get_list(consumer_key, pocket_access_token):
@@ -154,7 +160,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         if tbr[item]['has_image'] == '2':
           # it's an image
           images.append(item)
-    
+
     if num_videos:
       # don't select more than the total items_needed
       num_videos = items_needed if items_needed <= num_videos else num_videos
@@ -186,7 +192,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
           words = int(tbr[item]['word_count'])
           if words > longreads_wordcount:
             long_reads.append(item) # we only need to append the item_id
-      
+
       total_longreads = len(long_reads)
       total_shortreads = len(tbr) - total_longreads
       required_shortreads = items_needed - num_longreads
@@ -196,7 +202,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
       # if there are enough longreads AND enough shortreads, go ahead
       if enough_longreads and enough_shortreads:
         # select random longreads
-        # note we need to check whether any are actually required at this point, otherwise we run the risk of items_needed becoming a negative number 
+        # note we need to check whether any are actually required at this point, otherwise we run the risk of items_needed becoming a negative number
         selected_longreads = (random.sample(long_reads, num_longreads)) if items_needed > 0 else []
         # add random shortreads
         # first we need to remove the longreads from tbr:
@@ -251,12 +257,12 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         # add the two lists together
         selection = selected_longreads + selected_shortreads
         chosen['longreads'] = len(selected_longreads)
-        chosen['shortreads'] = len(selected_shortreads)        
+        chosen['shortreads'] = len(selected_shortreads)
         readd(selection)
       else:
         # if we get to here there aren't enough of either, so we should just return everything
         chosen['longreads'] = total_longreads
-        chosen['shortreads'] = total_shortreads        
+        chosen['shortreads'] = total_shortreads
         readd(list(tbr))
     else: # if num_longreads is False or 0 (which are the same thing)
       # check how many items in total there are in the TBR list
@@ -270,12 +276,12 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
     tot_images = chosen['images'] if 'images' in chosen else None
     random_choice = 'random' in chosen
     tot_added = 0
-    for v in chosen.values(): 
+    for v in chosen.values():
       tot_added += v
     remaining = available - tot_added
     completed_message = 'Success! ' + str(tot_added) + ' items added to your reading list, including '
     if random_choice:
-      completed_message += str(chosen['random']) + ' random articles, ' 
+      completed_message += str(chosen['random']) + ' random articles, '
     if tot_images:
       completed_message += str(tot_images) + ' images, '
     if tot_videos:
@@ -291,7 +297,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
 
 def purge_tags(list, archive, keep_tags):
   # TODO:
-  # remove all tags from all items 
+  # remove all tags from all items
   # optionally in List only, archive only or both
   # optionally keep certain tags?
   pass
@@ -330,7 +336,7 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
     print('Skipping favorited items...')
   else:
     params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
-  
+
   # GET the list
   request = get(params)
   list_items = request.json()
@@ -369,7 +375,7 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
       action = {"item_id": item, "action": "tags_add"} # add new tag rather than replacing all of them
       action["tags"] = archive_tag
       actions.append(action)
-      
+
   # Update the tags
   # group into smaller chunks of 20 to avoid a 414 (URL too long) error
   tag_chunks = [actions[i:i+20] for i in range(0, len(actions), 20)]
@@ -386,9 +392,9 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
     print(update_tags)
     time.sleep(2) # don't fire off requests too quickly
 
-  # Now archive everything 
+  # Now archive everything
   archive_actions = []
-  
+
   for item in items_to_stash:
     item_action = {"item_id": item, "action": "archive"}
     archive_actions.append(item_action)
@@ -417,7 +423,7 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
 def test(consumer_key, pocket_access_token):
 
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "count": "1", "detailType": "complete"}
-  
+
   # GET the list
   request = get(params)
   list_items = request.json()
