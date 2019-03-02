@@ -34,14 +34,13 @@ if [ $(which python3) ]; then
                   daynum=$REPLY
                   # what hour do they want to refresh their list? Must be a number between 0 and 23. Is 6 by default.
                   echo 'Enter an hour between 0 and 23 for when you want to run your script.'
-                  read hour            
+                  read hour
                   isnum='^2[0-3]$|^1?[0-9]$'
                   while ! [[ $hour =~ $isnum ]]
                   do
                     echo 'Invalid choice - please enter a whole number between 0 and 23'
                     read hour
                   done
-                  echo "You chose $hour"
                   # are they running MacOS or Linux
                   echo "Ok last question: are you running (1) MacOS or (2) Linux?"
                   select operating_system in MacOS Linux;
@@ -62,8 +61,13 @@ if [ $(which python3) ]; then
                         $errorpath
                         " ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist
                         # unload launchd file in case we're re-loading it
-                        launchctl unload ~/Library/Launchagents/com.getpocket.pocketsnack.plist
+                        # this should only run if the plist file exists (you can't unload a file that doesn't exist)
+                        if [ -f ~/Library/Launchagents/com.getpocket.pocketsnack.plist ]; then
+                          echo "unloading old launchd file"
+                          launchctl unload ~/Library/Launchagents/com.getpocket.pocketsnack.plist
+                        fi
                         # load launchd file
+                        echo "loading launchd file"
                         launchctl load ~/Library/Launchagents/com.getpocket.pocketsnack.plist
                         echo "You're all set up! Enjoy your new Pocket experience."
                         exit 0
@@ -80,12 +84,12 @@ if [ $(which python3) ]; then
                     esac
                   done
                 fi
-              done  
+              done
               ;;
             2)
               # what hour do they want to refresh their list? Must be a number between 0 and 23. Is 6 by default.
               echo 'Enter an hour between 0 and 23 for when you want to run your script.'
-              read hour            
+              read hour
               isnum='^2[0-3]$|^1?[0-9]$'
               while ! [[ $hour =~ $isnum ]]
               do
@@ -109,7 +113,7 @@ if [ $(which python3) ]; then
                     " ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist
                     sed -i '' -e "15c\\
                     $errorpath
-                    " ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist                    
+                    " ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist
                     # unload launchd file in case we're re-loading it
                     launchctl unload ~/Library/Launchagents/com.getpocket.pocketsnack.plist
                     # load launchd file
@@ -139,11 +143,11 @@ if [ $(which python3) ]; then
           esac
         done
         ;;
-      No) 
+      No)
         echo 'Run "pocketsnack authorise" when you are ready to authorise your app.'
         exit 0
         ;;
-      *) 
+      *)
         echo 'Enter "1" to authorise or "2" to exit.'
         ;;
     esac
