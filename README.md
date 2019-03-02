@@ -81,6 +81,24 @@ Runs `stash` followed by `lucky_dip`. This is the command that is run by launchd
 
 Adds the archive tag to everything in your list, and then archives them. Depending on the value of `ignore_faves` and `ignore_tags` in `settings.py` some items may remain in the List.
 
+## Uninstalling
+
+Don't like _pocket-snack_ any more or want to re-install it in a new directory? No problem, you will just need to do a little maintenance:
+
+1. If you set up `refresh` on a Mac you should unload the plist file:
+
+   `unload ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist`
+
+2. Once unloaded, you can delete it:
+
+   `rm ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist`
+
+3. Delete the executable link - if you don't do this when re-installing in a different directory, running `pocketsnack` will fail because it will still be pointing at the old directory.
+
+   `rm /usr/local/bin/pocketsnack`
+
+Now you can safely delete the pocket-snack directory.
+
 ## Bugs and suggestions
 
 Please log an issue - but check the existing issues first in case it's already been/being dealt with.
