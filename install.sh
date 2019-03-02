@@ -61,13 +61,9 @@ if [ $(which python3) ]; then
                         $errorpath
                         " ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist
                         # unload launchd file in case we're re-loading it
-                        # this should only run if the plist file exists (you can't unload a file that doesn't exist)
-                        if [ -f ~/Library/Launchagents/com.getpocket.pocketsnack.plist ]; then
-                          echo "unloading old launchd file"
-                          launchctl unload ~/Library/Launchagents/com.getpocket.pocketsnack.plist
-                        fi
+                        # send any error messages into the ether so users don't get an error on first install
+                        launchctl unload ~/Library/Launchagents/com.getpocket.pocketsnack.plist 2> /dev/null
                         # load launchd file
-                        echo "loading launchd file"
                         launchctl load ~/Library/Launchagents/com.getpocket.pocketsnack.plist
                         echo "You're all set up! Enjoy your new Pocket experience."
                         exit 0
@@ -96,7 +92,6 @@ if [ $(which python3) ]; then
                 echo 'Invalid choice - please enter a whole number between 0 and 23'
                 read hour
               done
-              echo "You chose $hour"
               # are they running MacOS or Linux
               echo "Ok last question: are you running (1) MacOS or (2) Linux?"
               select operating_system in MacOS Linux
@@ -114,9 +109,10 @@ if [ $(which python3) ]; then
                     sed -i '' -e "15c\\
                     $errorpath
                     " ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist
-                    # unload launchd file in case we're re-loading it
-                    launchctl unload ~/Library/Launchagents/com.getpocket.pocketsnack.plist
-                    # load launchd file
+                    # unload any existing launchd file
+                    # send any error messages into the ether so users don't get an error on first install
+                    launchctl unload ~/Library/Launchagents/com.getpocket.pocketsnack.plist 2> /dev/null
+                    # load new launchd file
                     launchctl load ~/Library/Launchagents/com.getpocket.pocketsnack.plist
                     echo "You're all set up! Enjoy your new Pocket experience."
                     exit 0
