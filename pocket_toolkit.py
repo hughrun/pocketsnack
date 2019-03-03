@@ -389,7 +389,11 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
     print('Processing tags on ' + str(i*20) + ' to ' + str((i*20)+len(tag_chunks[i])) + ' of ' + str(len(items_to_stash)) + '...', end="", flush=True) # printing like this means the return callback is appended to the line
     # post update to tags
     update_tags = send(actions_escaped, consumer_key, pocket_access_token)
-    print(update_tags)
+    if update_tags.raise_for_status() == None:
+      print('Ok')
+    else:
+      print("Oh dear, something went wrong.")
+      print(update_tags)
     time.sleep(2) # don't fire off requests too quickly
 
   # Now archive everything
@@ -413,7 +417,11 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
     # archive items
     print('Archiving ' + str(i*20) + ' to ' + str((i*20)+len(chunks[i])) + ' of ' + str(len(items_to_stash)) + '...', end="", flush=True) # printing like this means the return callback is appended to the line
     send_callback = send(archive_escaped, consumer_key, pocket_access_token)
-    print(send_callback)
+    if send_callback.raise_for_status() == None:
+      print('Ok')
+    else:
+      print("Oh dear, something went wrong.")
+      print(send_callback)
     time.sleep(2) # don't fire off requests too quickly
 
   # return a list of what was stashed and, if relevant, what wasn't
