@@ -46,16 +46,16 @@ archive_tag = settings.archive_tag
 # settings dict for refresh
 refresh_settings = [
   consumer_key,
-  settings.pocket_access_token, 
-  archive_tag, 
-  settings.replace_all_tags, 
-  settings.retain_tags, 
-  settings.ignore_faves, 
-  settings.ignore_tags, 
-  settings.items_per_cycle, 
-  settings.num_videos, 
-  settings.num_images, 
-  settings.num_longreads, 
+  settings.pocket_access_token,
+  archive_tag,
+  settings.replace_all_tags,
+  settings.retain_tags,
+  settings.ignore_faves,
+  settings.ignore_tags,
+  settings.items_per_cycle,
+  settings.num_videos,
+  settings.num_images,
+  settings.num_longreads,
   settings.longreads_wordcount
 ]
 
@@ -64,7 +64,7 @@ if __name__ == '__main__':
   arguments = sys.argv
 
   if len(arguments) > 1:
-    
+
     if arguments[1] == 'authorise':
       # Run authorise once first to retrieve a pocket_access_token
       auth = pt.authorise(consumer_key, redirect_uri)
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         if longread:
           longreads += 1
       print('The user list has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')
-    
+
     elif arguments[1] == "archive":
       # Retrieve info about the user's list
       response = pt.get_tbr(consumer_key, settings.pocket_access_token, archive_tag)
@@ -100,7 +100,7 @@ if __name__ == '__main__':
           longread = False
         if longread:
           longreads += 1
-      print('The TBR archive has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')    
+      print('The TBR archive has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')
 
     elif arguments[1] == 'refresh':
       print('Refreshing at ' + datetime.now().strftime('%a %d %b %Y %H:%M'))
@@ -120,6 +120,6 @@ if __name__ == '__main__':
       print(result)
 
     else:
-      print('Unknown argument.') # TODO: need to create a man page for this
+      print('That argument is unknown. Check README.md for valid pocketsnack arguments.') # TODO: need to create a man page for this
   else:
     print('Whoops, you forgot to add an "argument". If you have not run anything yet, start with "pocketsnack authorise"')
