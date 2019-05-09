@@ -4,15 +4,15 @@
 <dict>
   <key>Label</key>
   <string>com.getpocket.pocketsnack</string>
-  <key>EnvironmentVariables</key> 
-  <dict> 
-    <key>PATH</key> 
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
     <string>/bin:/usr/bin:/usr/local/bin</string> <!-- this allows us to run scripts from /usr/local/bin  -->
   </dict>
   <key>StandardOutPath</key>
   <string>PATH</string>
   <key>StandardErrorPath</key>
-  <string>PATH</string>  
+  <string>PATH</string>
   <key>ProgramArguments</key>
   <array>
     <string>/usr/local/bin/pocketsnack</string>
@@ -27,5 +27,10 @@
     <key>Weekday</key>
     <integer>1</integer> <!-- this line is changed by install.sh  -->
   </dict>
+  <key>KeepAlive</key>
+    <dict>
+      <key>Crashed</key>
+      <true/>
+    </dict>
 </dict>
 </plist>

@@ -64,7 +64,7 @@ if [ $(which python3) ]; then
                         # send any error messages into the ether so users don't get an error on first install
                         launchctl unload ~/Library/Launchagents/com.getpocket.pocketsnack.plist 2> /dev/null
                         # load launchd file
-                        launchctl load ~/Library/Launchagents/com.getpocket.pocketsnack.plist
+                        launchctl load -w ~/Library/Launchagents/com.getpocket.pocketsnack.plist
                         echo "You're all set up! Enjoy your new Pocket experience."
                         exit 0
                         ;;
@@ -113,7 +113,7 @@ if [ $(which python3) ]; then
                     # send any error messages into the ether so users don't get an error on first install
                     launchctl unload ~/Library/Launchagents/com.getpocket.pocketsnack.plist 2> /dev/null
                     # load new launchd file
-                    launchctl load ~/Library/Launchagents/com.getpocket.pocketsnack.plist
+                    launchctl load -w  ~/Library/Launchagents/com.getpocket.pocketsnack.plist
                     echo "You're all set up! Enjoy your new Pocket experience."
                     exit 0
                     ;;
