@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
+set -e # throw for all errors instead of continuing
+
 echo 'Making executable..'
 chmod +x main.py
 echo 'Linking to local binary directory..'
-ln -s $(pwd)/main.py /usr/local/bin/pocketsnack
+if [ ! -h  /usr/local/bin/pocketsnack ] ; then # check whether symlink already exists
+  ln -s $(pwd)/main.py /usr/local/bin/pocketsnack
+fi 
 echo 'checking for Python3...'
 if [ $(which python3) ]; then
   echo 'Python 3 is installed and python3 command works'
@@ -48,6 +52,10 @@ if [ $(which python3) ]; then
                     case $operating_system in
                       MacOS)
                         # create a new plist file with the hour number and put it in the right place
+                        # if ~/Library/LaunchAgents doesn't exist it need to be created
+                        if [ ! -d ~/Library/LaunchAgents ] ; then
+                          mkdir ~/Library/LaunchAgents
+                        fi
                         sed "26 s/[0-9][0-9]*/$hour/" <daily.plist >~/Library/LaunchAgents/com.getpocket.pocketsnack.plist
                         # edit the file in place to update the day
                         sed -i '' -e "28 s/[0-9][0-9]*/$daynum/" ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist
@@ -99,6 +107,9 @@ if [ $(which python3) ]; then
                 case $operating_system in
                   MacOS)
                     # create a new plist file with the hour number and put it in the right place
+                    if [ ! -d ~/Library/LaunchAgents ] ; then
+                      mkdir ~/Library/LaunchAgents
+                    fi
                     sed "22 s/[0-9][0-9]*/$hour/" <hourly.plist >~/Library/LaunchAgents/com.getpocket.pocketsnack.plist
                     # edit the file in place to update the logfiles
                     logpath="<string>$(pwd)/pocketsnack.log</string>"
