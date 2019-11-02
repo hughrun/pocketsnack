@@ -15,6 +15,7 @@ This is a work in progress, but all functions described here should be working.
 4. run `bash install.sh` and follow the prompts
 
 ### Dependencies
+
 You will need Python 3.x installed and it must be called by `python3`, rather than `python`. These instructions, and the install script, assume you are using a Unix-like (Linux, BSD, MacOS) operating system. Microsoft Windows is not currently supported.
 
 On MacOS the easiest thing to do is to [install Python 3 using Homebrew](https://docs.brew.sh/Homebrew-and-Python): `brew install python`.
@@ -28,6 +29,7 @@ You will need to copy **settings-example.py** to a new file called **settings.py
 You can adjust most settings, but the defaults in **settings-example.py** should be ok for most users. Check the comments in **settings.example.py** for an explanation of each setting.
 
 ### Creating a Pocket consumer key for your app
+
 1. Log in to Pocket in a web browser
 2. Go to https://getpocket.com/developer and click 'CREATE NEW APP'
 3. Complete the form: you will need all permissions, and the platform should be 'Desktop (other)'
@@ -87,7 +89,7 @@ Don't like _pocket-snack_ any more or want to re-install it in a new directory? 
 
 1. If you set up `refresh` on a Mac you should unload the plist file:
 
-   `unload ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist`
+   `launchctl unload ~/Library/LaunchAgents/com.getpocket.pocketsnack.plist`
 
 2. Once unloaded, you can delete it:
 
