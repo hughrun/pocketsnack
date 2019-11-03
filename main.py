@@ -105,15 +105,16 @@ if __name__ == '__main__':
     elif arguments[1] == 'refresh':
       print('Refreshing at ' + datetime.now().strftime('%a %d %b %Y %H:%M'))
       refresh = pt.refresh(*refresh_settings)
-      print(refresh)
+      print('\033[0;36m' + refresh + '\033[0;m')
 
     elif arguments[1] == 'stash':
       stash = pt.stash(consumer_key, settings.pocket_access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves, settings.ignore_tags)
-      print(stash)
+      print('\033[0;36m' + stash + '\033[0;m')
 
     elif arguments[1] == 'lucky_dip':
+      print('\033[0;36mRunning lucky dip...\033[0;m')
       dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.num_videos, settings.num_images, settings.num_longreads, settings.longreads_wordcount)
-      print(dip)
+      print('\033[0;36m' + dip + '\033[0;m')
 
     elif arguments[1] == 'purge_tags':
 

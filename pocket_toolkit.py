@@ -38,7 +38,20 @@ import webbrowser
 # local modules
 import settings
 
-# request functions (make this a proper class object later)
+# ----------------
+# Create app
+# ----------------
+
+# Log in to Pocket in a web browser
+# Go to https://getpocket.com/developer and click 'CREATE NEW APP'
+# Complete the form: you will need all permissions, and the platform should be 'Desktop (other)'
+# Your new app will show a 'consumer key', which you need to paste into the first line in settings.py
+
+# -----------------
+# Request functions
+# -----------------
+
+# (TODO: make this a proper class object)
 # Pocket expects particular HTTP headers to send and receive JSON
 headers = {"Content-Type": "application/json; charset=UTF-8", "X-Accept": "application/json"}
 
@@ -60,7 +73,10 @@ def connection_live():
       pass
   return False
 
+# --------------------
 # process tag updates
+# --------------------
+
 def process_items(actions, consumer_key, pocket_access_token):
   # Update the tags
   # group into smaller chunks of 20 to avoid a 414 (URL too long) error
@@ -76,19 +92,10 @@ def process_items(actions, consumer_key, pocket_access_token):
     # post update to tags
     update = send(actions_escaped, consumer_key, pocket_access_token)
     if update.raise_for_status() == None:
-      print('\033[0;32mOk\033[0;m')
+      print('\033[0;32mOk\033[0;m') # Print 'Ok' in green.
     else:
-      print('\031[0;41mOh dear, something went wrong.\033[0;m')
+      print('\031[0;41mOh dear, something went wrong.\033[0;m') # Print error in red
     time.sleep(2) # don't fire off requests too quickly
-
-# ----------------
-# Create app
-# ----------------
-
-# Log in to Pocket in a web browser
-# Go to https://getpocket.com/developer and click 'CREATE NEW APP'
-# Complete the form: you will need all permissions, and the platform should be 'Desktop (other)'
-# Your new app will show a 'consumer key', which you need to paste into the first line in settings.py
 
 # ----------------
 # Authorise
@@ -101,7 +108,7 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
   # get the JSON response and save the token to a param for the next step
   request_token = requestOne.json()['code']
   # print the request token to the console so you know it happened
-  print('Your request token (code) is ' + request_token)
+  print('\033[0;36mYour request token (code) is \033[0;m' + request_token)
 
   # now you need to authorise the app in your Pocket account
   # build the url
@@ -112,7 +119,7 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
   # We're not writing a server app here so we use a little hack to check whether the user has finished authorising before we continue
   # Just wait for the user (you!) to indicate they have finished authorising the app
   # the '\n' prints a new line
-  print('Authorise your app in the browser tab that just opened.')
+  print('\033[0;36mAuthorise your app in the browser tab that just opened.\033[0;m')
   user_input = input('Type "done" when you have finished authorising the app in Pocket \n>>')
 
   if user_input == "done":
@@ -123,7 +130,7 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
     # get the JSON response as a Python dictionary and call it 'res'.
     res = requestTwo.json()
     # Finally we have the access token!
-    print('Access token for ' + res['username'] + ' is ' + res['access_token'])
+    print('\033[0;36mAccess token for ' + res['username'] + ' is \033[0;m' + res['access_token'])
     # Assign the access token to a parameter called access_token
     access_token = res['access_token']
     # replace the pocket_access_token line rather than just adding an extra at the end
@@ -132,7 +139,7 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
     for line in settings_file:
       line = re.sub('(pocket_access_token)+.*', repl, line)
       print(line.rstrip())
-    return 'Token added to settings.py - you are ready to use pocketsnack.'
+    return '\033[0;36mToken added to settings.py - you are ready to use pocketsnack.\033[0;m'
 
 # this is used in main.py
 def get_list(consumer_key, pocket_access_token):
@@ -333,13 +340,17 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
       if attempts < 4:
         attempts += 1
         time.sleep(10)
-        print('Attempting to connect...')
+        print('\033[0;36mAttempting to connect...\033[0;m')
         return run_lucky_dip(attempts)
       else:
-        msg = "Sorry, no connection after 4 attempts."
+        msg = "\033[0;36mSorry, no connection after 4 attempts.\033[0;m"
         return msg
 
   return run_lucky_dip(0)
+
+# -----------------
+#  purge tags
+# -----------------
 
 def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_token):
 
@@ -376,19 +387,22 @@ def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_toke
     process_items(actions, consumer_key, pocket_access_token)
     return '\033[0;36mUndesirable elements have been purged.\033[0;m' 
 
+# -----------------
+# refresh
+# -----------------
+
 def refresh(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount):
   # this is the job that should run regularly
   # run stash
-  print('Stashing...')
   stash_msg = stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags)
   print(stash_msg)
-  if stash_msg != 'Sorry, no connection after 4 attempts.':
+  if stash_msg != '\033[0;31mSorry, no connection after 4 attempts.\033[0;m':
     # run lucky_dip
-    print('Running lucky dip...')
+    print('\033[0;36mRunning lucky dip...\033[0;m')
     ld_message = lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount)
     return ld_message
   else:
-    return 'Refresh aborted.'
+    return '\033[0;31mRefresh aborted.\033[0;m'
 
 """
 Stash
@@ -404,11 +418,16 @@ favorite - boolean indicating whether to ignore (i.e. leave in the user list) fa
 
 """
 
+# -----------------
+# stash items
+# -----------------
+
 def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags):
   # if ignore_faves is set to True, don't get favorite items
   if favorite:
     params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread", "favorite": "0"}
-    print('Skipping favorited items...')
+    print('\033[0;36mStashing items...\033[0;m')
+    print('\033[0;36mSkipping favorited items...\033[0;m')
   else:
     params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
 
@@ -463,8 +482,8 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
           item_action = {"item_id": item, "action": "archive"}
           archive_actions.append(item_action)
 
-        print('archiving ' + str(len(archive_actions)) + ' items...' )
-        
+        print('\033[0;36mArchiving ' + str(len(archive_actions)) + ' items...\033[0;m')
+
          # archive items
         process_items(archive_actions, consumer_key, pocket_access_token)
 
@@ -475,13 +494,17 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
         if attempts < 4:
           attempts += 1
           time.sleep(10)
-          print('Attempting to connect...')
+          print('\033[0;36mAttempting to connect...\033[0;m')
           return run_stash(attempts)
         else:
-          msg = "Sorry, no connection after 4 attempts."
+          msg = "\033[0;31mSorry, no connection after 4 attempts.\033[0;m"
           return msg
 
   return run_stash(0)
+
+# -----------------
+# test
+# -----------------
 
 def test(consumer_key, pocket_access_token):
 
