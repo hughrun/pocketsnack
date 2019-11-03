@@ -60,6 +60,27 @@ def connection_live():
       pass
   return False
 
+# process tag updates
+def process_items(actions, consumer_key, pocket_access_token):
+  # Update the tags
+  # group into smaller chunks of 20 to avoid a 414 (URL too long) error
+  tag_chunks = [actions[i:i+20] for i in range(0, len(actions), 20)]
+
+  # process each chunk
+  for i, chunk in enumerate(tag_chunks):
+
+    actions_string = json.dumps(chunk)
+    # now URL encode it using urllib
+    actions_escaped = urllib.parse.quote(actions_string)
+    print('   Processing ' + str(i*20) + ' to ' + str((i*20)+len(tag_chunks[i])) + ' of ' + str(len(actions)) + '...', end="", flush=True) # printing like this means the return callback is appended to the line
+    # post update to tags
+    update = send(actions_escaped, consumer_key, pocket_access_token)
+    if update.raise_for_status() == None:
+      print('\033[0;32mOk\033[0;m')
+    else:
+      print('\031[0;41mOh dear, something went wrong.\033[0;m')
+    time.sleep(2) # don't fire off requests too quickly
+
 # ----------------
 # Create app
 # ----------------
@@ -113,11 +134,13 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
       print(line.rstrip())
     return 'Token added to settings.py - you are ready to use pocketsnack.'
 
+# this is used in main.py
 def get_list(consumer_key, pocket_access_token):
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token}
   request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
   return request.json()
 
+# this is used in main.py
 def get_tbr(consumer_key, pocket_access_token, archive_tag):
   # only return items in the archive, tagged with whatever the archive tag is
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
@@ -318,12 +341,40 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
 
   return run_lucky_dip(0)
 
-def purge_tags(list, archive, keep_tags):
-  # TODO:
-  # remove all tags from all items
-  # optionally in List only, archive only or both
-  # optionally keep certain tags?
-  pass
+def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_token):
+
+  params = {
+    "consumer_key": consumer_key, 
+    "access_token": pocket_access_token, 
+    "state": state, 
+    "detailType": "complete"
+    }
+
+  # check we're online
+  if connection_live() == True:
+    # GET the list
+    request = get(params).json()['list']
+    actions = []
+
+    for item in request:
+      # find the item tags
+      item_tags = []
+      if 'tags' in request[item]:
+        for tag in request[item]['tags']:
+          item_tags.append(tag)
+      # keep any retain_tags like we use in stash
+      if len(item_tags) > 0:
+        update = {"item_id": item, "action": "tags_replace"} # item is the ID because it's the dict key
+        retain_tags.add(archive_tag) # we don't want to wipe out the archive tag on archived items!
+        update["tags"] = list(retain_tags.intersection(item_tags))
+        actions.append(update)
+      # otherwise just clear all tags
+      else:
+        update = {"item_id": item, "action": "tags_clear"} # item is the ID because it's the dict key
+        actions.append(update)
+
+    process_items(actions, consumer_key, pocket_access_token)
+    return '\033[0;36mUndesirable elements have been purged.\033[0;m' 
 
 def refresh(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount):
   # this is the job that should run regularly
@@ -403,23 +454,7 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
             actions.append(action)
 
         # Update the tags
-        # group into smaller chunks of 20 to avoid a 414 (URL too long) error
-        tag_chunks = [actions[i:i+20] for i in range(0, len(actions), 20)]
-
-        # process each chunk
-        for i, chunk in enumerate(tag_chunks):
-
-          actions_string = json.dumps(chunk)
-          # now URL encode it using urllib
-          actions_escaped = urllib.parse.quote(actions_string)
-          print('Processing tags on ' + str(i*20) + ' to ' + str((i*20)+len(tag_chunks[i])) + ' of ' + str(len(items_to_stash)) + '...', end="", flush=True) # printing like this means the return callback is appended to the line
-          # post update to tags
-          update_tags = send(actions_escaped, consumer_key, pocket_access_token)
-          if update_tags.raise_for_status() == None:
-            print('Ok')
-          else:
-            print("Oh dear, something went wrong.")
-          time.sleep(2) # don't fire off requests too quickly
+        process_items(actions, consumer_key, pocket_access_token)
 
         # Now archive everything
         archive_actions = []
@@ -429,25 +464,9 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
           archive_actions.append(item_action)
 
         print('archiving ' + str(len(archive_actions)) + ' items...' )
-
-        # group into smaller chunks of 20 to avoid a 414 (URL too long) error
-        chunks = [archive_actions[i:i+20] for i in range(0, len(archive_actions), 20)]
-
-        # process each chunk
-        for i, chunk in enumerate(chunks):
-          # stringify
-          archive_items_string = json.dumps(chunk)
-          archive_escaped = urllib.parse.quote(archive_items_string)
-
-          # archive items
-          print('Archiving ' + str(i*20) + ' to ' + str((i*20)+len(chunks[i])) + ' of ' + str(len(items_to_stash)) + '...', end="", flush=True) # printing like this means the return callback is appended to the line
-          send_callback = send(archive_escaped, consumer_key, pocket_access_token)
-          if send_callback.raise_for_status() == None:
-            print('Ok')
-          else:
-            print("Oh dear, something went wrong.")
-            print(send_callback)
-          time.sleep(2) # don't fire off requests too quickly
+        
+         # archive items
+        process_items(archive_actions, consumer_key, pocket_access_token)
 
         # return a list of what was stashed and, if relevant, what wasn't
         skipped_items = len(item_list) - len(items_to_stash)

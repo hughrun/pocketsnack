@@ -43,7 +43,7 @@ consumer_key = settings.pocket_consumer_key
 redirect_uri = settings.pocket_redirect_uri
 archive_tag = settings.archive_tag
 
-# settings dict for refresh
+# settings dict for other vars
 refresh_settings = [
   consumer_key,
   settings.pocket_access_token,
@@ -114,6 +114,30 @@ if __name__ == '__main__':
     elif arguments[1] == 'lucky_dip':
       dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.num_videos, settings.num_images, settings.num_longreads, settings.longreads_wordcount)
       print(dip)
+
+    elif arguments[1] == 'purge_tags':
+
+      if len(arguments) < 3:
+        print('\033[0;36mWhoops, you need to use a second argument with purge_tags.\033[0;m')
+        print('\033[0;36mTry "list", "archive" or "all".\033[0;m')
+
+      elif arguments[2] == 'list':
+        print('\033[0;36mPurging tags in the list\033[0;m')
+        purge = pt.purge_tags('unread', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token)
+        print(purge)
+
+      elif arguments[2] == 'archive':
+        print('\033[0;36mPurging tags in the archive\033[0;m')
+        purge = pt.purge_tags('archive', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token)
+        print(purge)
+
+      elif arguments[2] == 'all':
+        print('\033[0;36mPurging tags in both the archive and the list\033[0;m')
+        purge = pt.purge_tags('all', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token)
+        print(purge)
+      else:
+        print('\033[0;36mWhoops, you used an unknown argument to purge_tags.\033[0;m')
+        print('\033[0;36mPossible options are "purge_tags list", "purge_tags archive" or "purge_tags all".\033[0;m')
 
     elif arguments[1] == 'test':
       result = pt.test(consumer_key, settings.pocket_access_token)

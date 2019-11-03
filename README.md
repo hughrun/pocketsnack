@@ -71,9 +71,11 @@ Same as _archive_ but for your list instead of your archive.
 
 Returns items from the archive to the list, and removes the archive tag. The number of items returned is determined by `items_per_cycle` in `settings.py`. Note that if `num_videos` and `num_images` add up to more than `items_per_cycle`, _lucky_dip_ will only return the total specified in `items_per_cycle`. Videos take precedence.
 
-### purge
+### purge_tags
 
-This doesn't exist yet. It will delete all tags except for those specified in a list.
+You can use **purge_tags** to clear all tags in your List, Archive, or both, excluding the `archive_tag` and any `retain_tags`. This is useful if you've been using the Aus GLAM Blogs Pocket tool or anything else that retains the original tags from articles.
+
+`purge_tags` requires a second argument: `list`, `archive`, or `all`, depending on where you want to purge tags.
 
 ### refresh
 
