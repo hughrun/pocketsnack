@@ -173,3 +173,6 @@ if __name__ == '__main__':
   if options.test:
     result = pt.test(consumer_key, settings.pocket_access_token)
     print(result)
+  
+  else:
+    print('\033[0;36mpocketsnack\033[0;m requires arguments or flags to do anything. Try \033[0;36mpocketsnack -h\033[0;m for more information')
