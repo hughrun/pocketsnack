@@ -39,6 +39,12 @@ import webbrowser
 import settings
 import pocket_toolkit as pt
 
+# ----------------
+# Settings
+# ----------------
+
+# TODO: clean this up
+
 # assign short variable names from the settings file
 consumer_key = settings.pocket_consumer_key
 redirect_uri = settings.pocket_redirect_uri
@@ -60,10 +66,15 @@ refresh_settings = [
   settings.longreads_wordcount
 ]
 
+# ----------------
+# argparser arguments
+# ----------------
+
 parser = ArgumentParser(description='\033[1;36mpocketsnack: a command line tool for decluttering your Pocket account\033[1;m')
 admin = parser.add_argument_group('admin commands')
 actions = parser.add_argument_group('action commands')
 mex = parser.add_mutually_exclusive_group()
+timers = parser.add_mutually_exclusive_group()
 
 mex.add_argument(
     "-a", "--archive", action="store_true", help="get information on TBR items in archive (with -i) or purge tags in archive (with -p)"
@@ -80,11 +91,20 @@ actions.add_argument(
 mex.add_argument(
     "-l", "--list", action="store_true", help="get information on items in list (with -i) or purge tags in list (with -p)"
 )
+timers.add_argument(
+    "-n", "--since", type=int, help="test whether API call returns data"
+)
+timers.add_argument(
+    "-o", "--before", type=int, help="test whether API call returns data"
+)
 actions.add_argument(
     "-p", "--purge", action="store_true", help="remove all tags from list, archive, or both, depending on the second argument provided and excepting tags listed in 'retain_tags' in settings"
 )
 actions.add_argument(
     "-r", "--refresh", action="store_true", help="run 'stash' and then 'lucky_dip' in one operation"
+)
+actions.add_argument(
+    "-s", "--stash", action="store_true", help="add 'tbr' tag to all items in user list and archive them, with exceptions as per settings"
 )
 admin.add_argument(
     "-t", "--test", action="store_true", help="test whether API call returns data"
@@ -92,13 +112,23 @@ admin.add_argument(
 admin.add_argument(
     "-u", "--authorise", action="store_true", help="authorise app to connect to a Pocket account"
 )
-actions.add_argument(
-    "-s", "--stash", action="store_true", help="add 'tbr' tag to all items in user list and archive them, with exceptions as per settings"
-)
 
 options = parser.parse_args()
 
+# ----------------
+# What happens with each combination?
+# ----------------
+
 if __name__ == '__main__':
+
+  # Find all args that have a value other than False
+  # This helps with error messages for optional args 
+  # that need to be used in combination with something else
+  true_vars = []
+  orphans = ['list', 'archive', 'all', 'since', 'before']
+  for x in vars(options):
+    if vars(options)[x]:
+      true_vars.append(x)
 
   if options.authorise:
     # Run authorise once first to retrieve a pocket_access_token
@@ -179,7 +209,8 @@ if __name__ == '__main__':
     result = pt.test(consumer_key, settings.pocket_access_token)
     print(result)
   
-  elif options.list or options.archive or options.all:
+  #elif options.list or options.archive or options.all or options:
+  elif set(true_vars).intersection(orphans):
     print('\n   That command cannot be used by itself. Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
 
   else:
