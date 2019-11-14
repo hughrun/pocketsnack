@@ -60,54 +60,45 @@ refresh_settings = [
   settings.longreads_wordcount
 ]
 
-parser = ArgumentParser(description='pocketsnack: a command line tool for decluttering your Pocket account')
-subparsers = parser.add_subparsers(help='for more help on these options use [command] --help (e.g. purge --help)')
+parser = ArgumentParser(description='\033[1;36mpocketsnack: a command line tool for decluttering your Pocket account\033[1;m')
+admin = parser.add_argument_group('admin commands')
+actions = parser.add_argument_group('action commands')
+mex = parser.add_mutually_exclusive_group()
 
-parser.add_argument(
-    "-u", "--authorise", action="store_true", help="authorise app to connect to a Pocket account"
+mex.add_argument(
+    "-a", "--archive", action="store_true", help="get information on TBR items in archive (with -i) or purge tags in archive (with -p)"
 )
-parser.add_argument(
+mex.add_argument(
+    "-b", "--all", action="store_true", help="purge all tags in both list and archive (with -p)"
+)
+actions.add_argument(
     "-d", "--lucky_dip", action="store_true", help="move random items tagged 'tbr' from archive to list, depending on settings"
 )
-parser.add_argument(
+actions.add_argument(
+    "-i", "--info", action="store_true", help="get information on items in list or TBR items in archive"
+)
+mex.add_argument(
+    "-l", "--list", action="store_true", help="get information on items in list (with -i) or purge tags in list (with -p)"
+)
+actions.add_argument(
+    "-p", "--purge", action="store_true", help="remove all tags from list, archive, or both, depending on the second argument provided and excepting tags listed in 'retain_tags' in settings"
+)
+actions.add_argument(
     "-r", "--refresh", action="store_true", help="run 'stash' and then 'lucky_dip' in one operation"
 )
-parser.add_argument(
+admin.add_argument(
     "-t", "--test", action="store_true", help="test whether API call returns data"
 )
-
-# stash
-# TODO: this needs to work like 'purge' with optional args to stash only items added more recently than X days or alternatively only items less recent than X days
-# we also need this functionality for 'refresh' - maybe can use 'parents' option in argparse?
-
-parser.add_argument(
+admin.add_argument(
+    "-u", "--authorise", action="store_true", help="authorise app to connect to a Pocket account"
+)
+actions.add_argument(
     "-s", "--stash", action="store_true", help="add 'tbr' tag to all items in user list and archive them, with exceptions as per settings"
-)
-
-# SUBPARSERS
-
-# new 'info' subparser to reduce confusion between v1 option 'archive' and 'stash'
-info = subparsers.add_parser(
-  'info', help='get information on contents of Pocket account'
-)
-
-info.add_argument(
-    'info_choice', default='list', const="list", nargs='?', choices=('list', 'tbr'), help="return data about items in user's Pocket list or items tagged 'tbr' in users's Pocket archive. For example \033[1;36mpocketsnack info tbr\033[1;m. Defaults to 'list'"
-)
-
-# purge
-purge_choice = subparsers.add_parser(
-  "purge", help="remove all tags from list, archive, or both ('all'), depending on the second argument provided and excepting tags listed in 'retain_tags' in settings.py. Defaults to 'list' if no argument is provided"
-)
-purge_choice.add_argument(
-    'purge_choice', default='list', const="list", nargs='?', choices=('list', 'archive', 'all'), help="remove all tags from list, archive, or both"
 )
 
 options = parser.parse_args()
 
 if __name__ == '__main__':
-
-  # print(options)
 
   if options.authorise:
     # Run authorise once first to retrieve a pocket_access_token
@@ -119,9 +110,8 @@ if __name__ == '__main__':
     dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.num_videos, settings.num_images, settings.num_longreads, settings.longreads_wordcount)
     print('\033[0;36m' + dip + '\033[0;m')
 
-  elif hasattr(options, 'info_choice'):
-
-    if options.info_choice == 'tbr':
+  elif options.info:
+    if options.archive:
       # Retrieve info about the user's list
       response = pt.get_tbr(consumer_key, settings.pocket_access_token, archive_tag)
       items = response['list']
@@ -137,7 +127,7 @@ if __name__ == '__main__':
           longreads += 1
       print('The TBR archive has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')
 
-    elif options.info_choice == 'list':
+    elif options.list:
       # Retrieve info about the user's list
       response = pt.get_list(consumer_key, settings.pocket_access_token)
       items = response['list']
@@ -153,23 +143,28 @@ if __name__ == '__main__':
           longreads += 1
       print('The user list has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')
 
-  # purge options
-  elif hasattr(options, 'purge_choice'):
+    else:
+      print('\n   \033[0;36m--info\033[0;m requires a second argument (-a or -l). Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
 
-    if options.purge_choice == 'list':
+  elif options.purge:
+
+    if options.list:
       print('\033[0;36mPurging tags in the list\033[0;m')
       purge = pt.purge_tags('unread', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token)
       print(purge)
 
-    elif options.purge_choice == 'archive':
+    elif options.archive:
       print('\033[0;36mPurging tags in the archive\033[0;m')
       purge = pt.purge_tags('archive', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token)
       print(purge)
 
-    elif options.purge_choice == 'all':
+    elif options.all:
       print('\033[0;36mPurging tags in both the archive and the list\033[0;m')
       purge = pt.purge_tags('all', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token)
       print(purge)
+
+    else:
+      print('\n   \033[0;36m--purge\033[0;m requires a second argument (-a, -l or -b). Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
 
   elif options.refresh:
     print('Refreshing at ' + datetime.now().strftime('%a %d %b %Y %H:%M'))
@@ -184,5 +179,8 @@ if __name__ == '__main__':
     result = pt.test(consumer_key, settings.pocket_access_token)
     print(result)
   
+  elif options.list or options.archive or options.all:
+    print('\n   That command cannot be used by itself. Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
+
   else:
-    print('\033[0;36mpocketsnack\033[0;m requires arguments or flags to do anything. Try \033[0;36mpocketsnack -h\033[0;m for more information')
+    print('\033[0;36mpocketsnack\033[0;m requires commands and/or flags to do anything useful. Try \033[0;36mpocketsnack -h\033[0;m for more information')
