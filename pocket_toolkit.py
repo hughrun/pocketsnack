@@ -49,7 +49,7 @@ import settings
 # Your new app will show a 'consumer key', which you need to paste into the first line in settings.py
 
 # -----------------
-# Request functions
+# reusable functions
 # -----------------
 
 # (TODO: make this a proper class object)
@@ -73,6 +73,15 @@ def connection_live():
   except OSError:
       pass
   return False
+
+# make a unix timestamp for before/after flags with Pocket's 'since' param
+def get_timestamp(since):
+  # TODO: make this a function we can use for lucky_dip and stash
+  now = datetime.now()
+  delta = timedelta(days=since) 
+  since_time = datetime.strftime(now - delta, '%c')
+  strptime = time.strptime(since_time)
+  return time.mktime(strptime) # return Unix timestamp
 
 # --------------------
 # process tag updates
@@ -162,14 +171,7 @@ def info(consumer_key, pocket_access_token, archive_tag, before, since):
   if before:
     # get all items using params
     all_items = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
-    # Pocket needs a Unix timestamp
-    # TODO: make this a function we can use for lucky_dip and stash
-    now = datetime.now()
-    delta = timedelta(days=-before) # we are effectively getting 'since' here
-    since_time = datetime.strftime(now + delta, '%c')
-    strptime = time.strptime(since_time)
-    date = time.mktime(strptime)
-    params['since'] = date
+    params['since'] = get_timestamp(before)
     since_items = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
     # get non-intersection of 2 groups to get only items changed 'before'
     items_list = all_items.json()['list'] # everything
@@ -181,14 +183,7 @@ def info(consumer_key, pocket_access_token, archive_tag, before, since):
     return_value['list'] = items_list # reconstruct the dict
     return return_value
   elif since:
-    # limit to items since 'since'
-    # Pocket needs a Unix timestamp
-    now = datetime.now()
-    delta = timedelta(days=-since) # minus the number of days
-    since_time = datetime.strftime(now + delta, '%c')
-    strptime = time.strptime(since_time)
-    date = time.mktime(strptime)
-    params['since'] = date
+    params['since'] = get_timestamp(since)
     request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
     return request.json()
   else:
@@ -465,10 +460,11 @@ favorite - boolean indicating whether to ignore (i.e. leave in the user list) fa
 # -----------------
 
 def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags):
+  print('\033[0;36mStashing items...\033[0;m')
   # if ignore_faves is set to True, don't get favorite items
+  # TODO: here we need to check if before or since are set and adjust params accordingly
   if favorite:
     params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread", "favorite": "0"}
-    print('\033[0;36mStashing items...\033[0;m')
     print('\033[0;36mSkipping favorited items...\033[0;m')
   else:
     params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
