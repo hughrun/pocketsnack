@@ -26,6 +26,7 @@
 import requests
 
 # bundled with Python
+from datetime import datetime, time, timedelta
 import fileinput
 import json
 import random
@@ -141,19 +142,60 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
       print(line.rstrip())
     return '\033[0;36mToken added to settings.py - you are ready to use pocketsnack.\033[0;m'
 
-# this is used in main.py
-def get_list(consumer_key, pocket_access_token):
-  params = {"consumer_key": consumer_key, "access_token": pocket_access_token}
-  request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
-  return request.json()
+# ------------------------------
+# Read info about Pocket account
+# ------------------------------
 
-# this is used in main.py
-def get_tbr(consumer_key, pocket_access_token, archive_tag):
-  # only return items in the archive, tagged with whatever the archive tag is
-  params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
-  request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
-  return request.json()
+def info(consumer_key, pocket_access_token, archive_tag, before, since):
 
+  params = {
+    "consumer_key": consumer_key, 
+    "access_token": pocket_access_token, 
+    }
+  if archive_tag:
+    # state is archive & use archive tag
+    params['state'] = 'archive'
+    params['tag'] = archive_tag
+  else:
+    # state is unread
+    params['state'] = 'unread'
+  if before:
+    # get all items using params
+    all_items = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
+    # Pocket needs a Unix timestamp
+    # TODO: make this a function we can use for lucky_dip and stash
+    now = datetime.now()
+    delta = timedelta(days=-before) # we are effectively getting 'since' here
+    since_time = datetime.strftime(now + delta, '%c')
+    strptime = time.strptime(since_time)
+    date = time.mktime(strptime)
+    params['since'] = date
+    since_items = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
+    # get non-intersection of 2 groups to get only items changed 'before'
+    items_list = all_items.json()['list'] # everything
+    since_list = since_items.json()['list'] # only things since 'before'
+    if len(since_list) > 0:
+      for key in since_list.keys():
+        items_list.pop(key, None) # remove everything from items_list that is in since_list
+    return_value = {}
+    return_value['list'] = items_list # reconstruct the dict
+    return return_value
+  elif since:
+    # limit to items since 'since'
+    # Pocket needs a Unix timestamp
+    now = datetime.now()
+    delta = timedelta(days=-since) # minus the number of days
+    since_time = datetime.strftime(now + delta, '%c')
+    strptime = time.strptime(since_time)
+    date = time.mktime(strptime)
+    params['since'] = date
+    request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
+    return request.json()
+  else:
+    # if no before/since params just gert everything in either the list or archive according to params
+    request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
+    return request.json()
+    
 # choose items to put back into the user List
 def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount):
 

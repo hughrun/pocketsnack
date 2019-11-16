@@ -92,10 +92,10 @@ mex.add_argument(
     "-l", "--list", action="store_true", help="get information on items in list (with -i) or purge tags in list (with -p)"
 )
 timers.add_argument(
-    "-n", "--since", type=int, help="test whether API call returns data"
+    "-n", "--since", type=int, help="only act on items where last activity is newer than a given number of days. Use with any action command"
 )
 timers.add_argument(
-    "-o", "--before", type=int, help="test whether API call returns data"
+    "-o", "--before", type=int, help="only act on items where last activity is older than a given number of days. Use with any action command"
 )
 actions.add_argument(
     "-p", "--purge", action="store_true", help="remove all tags from list, archive, or both, depending on the second argument provided and excepting tags listed in 'retain_tags' in settings"
@@ -141,37 +141,54 @@ if __name__ == '__main__':
     print('\033[0;36m' + dip + '\033[0;m')
 
   elif options.info:
+
+    def print_info(collection, items, longreads):
+      if options.before:
+        print(collection + 'has ' + items + ' items ' + 'updated prior to ' + str(options.before) + ' days ago and ' + longreads + ' are longreads.')
+      elif options.since:
+        print(collection + 'has ' + items + ' items ' + 'updated since ' + str(options.since) + ' days ago and ' + longreads + ' are longreads.')
+      else:
+        print(collection + 'has ' + items + ' items and '  + longreads + ' are longreads.')
+
     if options.archive:
+      collection = 'The TBR archive '
       # Retrieve info about the user's list
-      response = pt.get_tbr(consumer_key, settings.pocket_access_token, archive_tag)
-      items = response['list']
-      longreads = 0
-      for item in items:
-        # is it a long read?
-        if 'word_count' in items[item]:
-          words = int(items[item]['word_count'])
-          longread = True if  words > settings.longreads_wordcount else False
-        else:
-          longread = False
-        if longread:
-          longreads += 1
-      print('The TBR archive has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')
+      response = pt.info(consumer_key, settings.pocket_access_token, archive_tag, options.before, options.since)
+      if 'list' in response:
+        items = response['list']
+        longreads = 0
+        for item in items:
+          # is it a long read?
+          if 'word_count' in items[item]:
+            words = int(items[item]['word_count'])
+            longread = True if  words > settings.longreads_wordcount else False
+          else:
+            longread = False
+          if longread:
+            longreads += 1
+        print_info(collection, str(len(items)), str(longreads))
+      else:
+          print('No items match that query')
 
     elif options.list:
+      collection = 'The user List '
       # Retrieve info about the user's list
-      response = pt.get_list(consumer_key, settings.pocket_access_token)
-      items = response['list']
-      longreads = 0
-      for item in items:
-        # is it a long read?
-        if 'word_count' in items[item]:
-          words = int(items[item]['word_count'])
-          longread = True if  words > settings.longreads_wordcount else False
-        else:
-          longread = False
-        if longread:
-          longreads += 1
-      print('The user list has ' + str(len(response['list'])) + ' items and ' + str(longreads) + ' are longreads.')
+      response = pt.info(consumer_key, settings.pocket_access_token, False, options.before, options.since)
+      if 'list' in response:
+        items = response['list']
+        longreads = 0
+        for item in items:
+          # is it a long read?
+          if 'word_count' in items[item]:
+            words = int(items[item]['word_count'])
+            longread = True if  words > settings.longreads_wordcount else False
+          else:
+            longread = False
+          if longread:
+            longreads += 1
+        print_info(collection, str(len(items)), str(longreads))
+      else:
+          print('No items match that query')
 
     else:
       print('\n   \033[0;36m--info\033[0;m requires a second argument (-a or -l). Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
@@ -209,7 +226,6 @@ if __name__ == '__main__':
     result = pt.test(consumer_key, settings.pocket_access_token)
     print(result)
   
-  #elif options.list or options.archive or options.all or options:
   elif set(true_vars).intersection(orphans):
     print('\n   That command cannot be used by itself. Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
 
