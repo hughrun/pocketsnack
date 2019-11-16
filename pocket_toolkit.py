@@ -428,18 +428,19 @@ def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_toke
 # refresh
 # -----------------
 
-def refresh(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount):
-  # this is the job that should run regularly
-  # run stash
-  stash_msg = stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags)
-  print(stash_msg)
-  if stash_msg != '\033[0;31mSorry, no connection after 4 attempts.\033[0;m':
-    # run lucky_dip
-    print('\033[0;36mRunning lucky dip...\033[0;m')
-    ld_message = lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount)
-    return ld_message
-  else:
-    return '\033[0;31mRefresh aborted.\033[0;m'
+
+# def refresh(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount, before, since):
+#   # this is the job that should run regularly
+#   # run stash
+#   stash_msg = stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, before, since)
+#   print(stash_msg)
+#   if stash_msg != '\033[0;31mSorry, no connection after 4 attempts.\033[0;m':
+#     # run lucky_dip
+#     print('\033[0;36mRunning lucky dip...\033[0;m')
+#     ld_message = lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount)
+#     return ld_message
+#   else:
+#     return '\033[0;31mRefresh aborted.\033[0;m'
 
 """
 Stash
@@ -459,15 +460,20 @@ favorite - boolean indicating whether to ignore (i.e. leave in the user list) fa
 # stash items
 # -----------------
 
-def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags):
+def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, before, since):
   print('\033[0;36mStashing items...\033[0;m')
   # if ignore_faves is set to True, don't get favorite items
   # TODO: here we need to check if before or since are set and adjust params accordingly
+  params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
   if favorite:
-    params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread", "favorite": "0"}
+    params['favorite'] = "0"
     print('\033[0;36mSkipping favorited items...\033[0;m')
-  else:
-    params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
+  if before:
+    timestamp = get_timestamp(before)
+    params['since'] = timestamp
+  elif since:
+    timestamp = get_timestamp(since)
+    params['since'] = timestamp
 
   def run_stash(attempts):
       if connection_live() == True:

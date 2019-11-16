@@ -215,11 +215,11 @@ if __name__ == '__main__':
 
   elif options.refresh:
     print('Refreshing at ' + datetime.now().strftime('%a %d %b %Y %H:%M'))
-    refresh = pt.refresh(*refresh_settings)
+    refresh = pt.refresh(*refresh_settings, options.before, options.since)
     print('\033[0;36m' + refresh + '\033[0;m')
 
   elif options.stash:
-    stash = pt.stash(consumer_key, settings.pocket_access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves, settings.ignore_tags)
+    stash = pt.stash(consumer_key, settings.pocket_access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves, settings.ignore_tags, options.before, options.since)
     print('\033[0;36m' + stash + '\033[0;m')
 
   elif options.test:
