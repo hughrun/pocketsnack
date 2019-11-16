@@ -76,7 +76,6 @@ def connection_live():
 
 # make a unix timestamp for before/after flags with Pocket's 'since' param
 def get_timestamp(since):
-  # TODO: make this a function we can use for lucky_dip and stash
   now = datetime.now()
   delta = timedelta(days=since) 
   since_time = datetime.strftime(now - delta, '%c')
@@ -192,7 +191,7 @@ def info(consumer_key, pocket_access_token, archive_tag, before, since):
     return request.json()
     
 # choose items to put back into the user List
-def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount):
+def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount, before, since):
 
   def run_lucky_dip(attempts):
     if connection_live() == True:
@@ -213,6 +212,9 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
 
       # get everything in the archive with the archive_tag
       params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
+      
+      # TODO: check before and since
+      
       request = get(params)
       tbr = request.json()['list']
 
@@ -463,86 +465,98 @@ favorite - boolean indicating whether to ignore (i.e. leave in the user list) fa
 def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, before, since):
   print('\033[0;36mStashing items...\033[0;m')
   # if ignore_faves is set to True, don't get favorite items
-  # TODO: here we need to check if before or since are set and adjust params accordingly
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
   if favorite:
     params['favorite'] = "0"
     print('\033[0;36mSkipping favorited items...\033[0;m')
-  if before:
-    timestamp = get_timestamp(before)
-    params['since'] = timestamp
-  elif since:
-    timestamp = get_timestamp(since)
-    params['since'] = timestamp
+  # before or since flags exist, add the 'since' param
+  # TESTING: check 'before' runs properly
 
   def run_stash(attempts):
-      if connection_live() == True:
-        # GET the list
-        request = get(params)
-        list_items = request.json()
-        actions = []
-        item_list = list_items['list']
-        # copy items_list so we can alter the copy whilst iterating through the original
-        items_to_stash = dict(item_list)
-        for item in item_list:
-          item_tags = []
-          if 'tags' in item_list[item]:
-            for tag in item_list[item]['tags']:
-              item_tags.append(tag)
+    if connection_live() == True:
+      # GET the list
+    
+      if before:
+        all_items = get(params)
+        params['since'] = get_timestamp(before)
+        since_items = get(params)
+        # get non-intersection of 2 groups to get only items last changed 'before'
+        item_list = all_items.json()['list'] # everything
+        since_list = since_items.json()['list'] # only things since 'before'
+        if len(since_list) > 0:
+          for key in since_list.keys():
+            item_list.pop(key, None) # remove everything from items_list that is in since_list
 
-          # filter out any items with the ignore tags before dealing with the rest
-          if len(ignore_tags) > 0 and len(ignore_tags.intersection(item_tags)) > 0:
-              # pop it out of the items_to_stash
-              items_to_stash.pop(item, None)
-          # Now we process all the tags first, before we archive everything
-          elif replace_all_tags:
-            # set up the action dict
-            action = {"item_id": item, "action": "tags_replace"} # item is the ID because it's the dict key
-            # are we retaining any tags?
-            if retain_tags: # retain_tags should either be False or a Set
-              # find the common tags between retain_tags and item_tags
-              # to do this we need retain_tags to be a set, but you can't JSON serialise a set, so we need to turn the result into a list afterwards
-              tags_to_keep = list(retain_tags.intersection(item_tags))
-              # don't forget to add the archive_tag!
-              tags_to_keep.append(archive_tag)
-              action["tags"] = tags_to_keep
-            # Anything that is still in the user list can be presumed to not have been read
-            # when they read it they will archive it (without the archive_tag because lucky_dip removes it)
-            else:
-              action["tags"] = archive_tag
-            actions.append(action)
-          else: # if replace_all_tags is False, just add the archive tag without removing any tags
-            action = {"item_id": item, "action": "tags_add"} # add new tag rather than replacing all of them
-            action["tags"] = archive_tag
-            actions.append(action)
-
-        # Update the tags
-        process_items(actions, consumer_key, pocket_access_token)
-
-        # Now archive everything
-        archive_actions = []
-
-        for item in items_to_stash:
-          item_action = {"item_id": item, "action": "archive"}
-          archive_actions.append(item_action)
-
-        print('\033[0;36mArchiving ' + str(len(archive_actions)) + ' items...\033[0;m')
-
-         # archive items
-        process_items(archive_actions, consumer_key, pocket_access_token)
-
-        # return a list of what was stashed and, if relevant, what wasn't
-        skipped_items = len(item_list) - len(items_to_stash)
-        return str(len(items_to_stash)) + ' items archived with "' + archive_tag + '" and ' + str(skipped_items) + ' items skipped due to retain tag.'
+      elif since:
+        timestamp = get_timestamp(since)
+        params['since'] = timestamp
+        item_list = get(params).json()['list']
       else:
-        if attempts < 4:
-          attempts += 1
-          time.sleep(10)
-          print('\033[0;36mAttempting to connect...\033[0;m')
-          return run_stash(attempts)
-        else:
-          msg = "\033[0;31mSorry, no connection after 4 attempts.\033[0;m"
-          return msg
+        item_list = get(params).json()['list']
+
+      # we store all the 'actions' in an array, then send one big HTTP request to the Pocket API
+      actions = []
+      # copy items_list so we can alter the copy whilst iterating through the original
+      items_to_stash = dict(item_list)
+      for item in item_list:
+        item_tags = []
+        if 'tags' in item_list[item]:
+          for tag in item_list[item]['tags']:
+            item_tags.append(tag)
+
+        # filter out any items with the ignore tags before dealing with the rest
+        if len(ignore_tags) > 0 and len(ignore_tags.intersection(item_tags)) > 0:
+            # pop it out of the items_to_stash
+            items_to_stash.pop(item, None)
+        # Now we process all the tags first, before we archive everything
+        elif replace_all_tags:
+          # set up the action dict
+          action = {"item_id": item, "action": "tags_replace"} # item is the ID because it's the dict key
+          # are we retaining any tags?
+          if retain_tags: # retain_tags should either be False or a Set
+            # find the common tags between retain_tags and item_tags
+            # to do this we need retain_tags to be a set, but you can't JSON serialise a set, so we need to turn the result into a list afterwards
+            tags_to_keep = list(retain_tags.intersection(item_tags))
+            # don't forget to add the archive_tag!
+            tags_to_keep.append(archive_tag)
+            action["tags"] = tags_to_keep
+          # Anything that is still in the user list can be presumed to not have been read
+          # when they read it they will archive it (without the archive_tag because lucky_dip removes it)
+          else:
+            action["tags"] = archive_tag
+          actions.append(action)
+        else: # if replace_all_tags is False, just add the archive tag without removing any tags
+          action = {"item_id": item, "action": "tags_add"} # add new tag rather than replacing all of them
+          action["tags"] = archive_tag
+          actions.append(action)
+
+      # Update the tags
+      process_items(actions, consumer_key, pocket_access_token)
+
+      # Now archive everything
+      archive_actions = []
+
+      for item in items_to_stash:
+        item_action = {"item_id": item, "action": "archive"}
+        archive_actions.append(item_action)
+
+      print('\033[0;36mArchiving ' + str(len(archive_actions)) + ' items...\033[0;m')
+
+        # archive items
+      process_items(archive_actions, consumer_key, pocket_access_token)
+
+      # return a list of what was stashed and, if relevant, what wasn't
+      skipped_items = len(item_list) - len(items_to_stash)
+      return str(len(items_to_stash)) + ' items archived with "' + archive_tag + '" and ' + str(skipped_items) + ' items skipped due to retain tag.'
+    else:
+      if attempts < 4:
+        attempts += 1
+        time.sleep(10)
+        print('\033[0;36mAttempting to connect...\033[0;m')
+        return run_stash(attempts)
+      else:
+        msg = "\033[0;31mSorry, no connection after 4 attempts.\033[0;m"
+        return msg
 
   return run_stash(0)
 

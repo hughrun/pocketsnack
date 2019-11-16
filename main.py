@@ -137,7 +137,7 @@ if __name__ == '__main__':
 
   elif options.lucky_dip:
     print('\033[0;36mRunning lucky dip...\033[0;m')
-    dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.num_videos, settings.num_images, settings.num_longreads, settings.longreads_wordcount)
+    dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.num_videos, settings.num_images, settings.num_longreads, settings.longreads_wordcount, options.before, options.since)
     print('\033[0;36m' + dip + '\033[0;m')
 
   elif options.info:
@@ -213,10 +213,11 @@ if __name__ == '__main__':
     else:
       print('\n   \033[0;36m--purge\033[0;m requires a second argument (-a, -l or -b). Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
 
-  elif options.refresh:
-    print('Refreshing at ' + datetime.now().strftime('%a %d %b %Y %H:%M'))
-    refresh = pt.refresh(*refresh_settings, options.before, options.since)
-    print('\033[0;36m' + refresh + '\033[0;m')
+  
+  # elif options.refresh:
+  #   print('Refreshing at ' + datetime.now().strftime('%a %d %b %Y %H:%M'))
+  #   refresh = pt.refresh(*refresh_settings, options.before, options.since)
+  #   print('\033[0;36m' + refresh + '\033[0;m')
 
   elif options.stash:
     stash = pt.stash(consumer_key, settings.pocket_access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves, settings.ignore_tags, options.before, options.since)
