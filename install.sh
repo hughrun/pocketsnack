@@ -10,6 +10,7 @@ fi
 echo 'checking for Python3...'
 if [ $(which python3) ]; then
   echo 'Python 3 is installed and python3 command works'
+  pip3 install requests >/dev/null
   echo 'Installation complete ✅ You can now get started!'
   echo '-------------------------------------------------'
   # check if user wants to just authorise straight away
