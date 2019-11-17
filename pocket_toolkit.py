@@ -26,6 +26,7 @@
 import requests
 
 # bundled with Python
+from datetime import datetime, time, timedelta
 import fileinput
 import json
 import random
@@ -48,7 +49,7 @@ import settings
 # Your new app will show a 'consumer key', which you need to paste into the first line in settings.py
 
 # -----------------
-# Request functions
+# reusable functions
 # -----------------
 
 # (TODO: make this a proper class object)
@@ -72,6 +73,33 @@ def connection_live():
   except OSError:
       pass
   return False
+
+# make a unix timestamp for before/after flags with Pocket's 'since' param
+def get_timestamp(since):
+  now = datetime.now()
+  delta = timedelta(days=since) 
+  since_time = datetime.strftime(now - delta, '%c')
+  strptime = time.strptime(since_time)
+  return time.mktime(strptime) # return Unix timestamp
+
+def get_item_list(params, before, since):
+  if before:
+    all_items = get(params)
+    params['since'] = get_timestamp(before)
+    since_items = get(params)
+    # get non-intersection of 2 groups to get only items last changed 'before'
+    item_list = all_items.json()['list'] # everything
+    since_list = since_items.json()['list'] # only things since 'before'
+    if len(since_list) > 0:
+      for key in since_list.keys():
+        item_list.pop(key, None) # remove everything from items_list that is in since_list
+    return item_list
+  elif since:
+    timestamp = get_timestamp(since)
+    params['since'] = timestamp
+    return get(params).json()['list']
+  else:
+    return get(params).json()['list']
 
 # --------------------
 # process tag updates
@@ -141,21 +169,29 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
       print(line.rstrip())
     return '\033[0;36mToken added to settings.py - you are ready to use pocketsnack.\033[0;m'
 
-# this is used in main.py
-def get_list(consumer_key, pocket_access_token):
-  params = {"consumer_key": consumer_key, "access_token": pocket_access_token}
-  request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
-  return request.json()
+# ------------------------------
+# Read info about Pocket account
+# ------------------------------
 
-# this is used in main.py
-def get_tbr(consumer_key, pocket_access_token, archive_tag):
-  # only return items in the archive, tagged with whatever the archive tag is
-  params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
-  request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
-  return request.json()
+def info(consumer_key, pocket_access_token, archive_tag, before, since):
+
+  params = {
+    "consumer_key": consumer_key, 
+    "access_token": pocket_access_token, 
+    }
+  if archive_tag:
+    # state is archive & use archive tag
+    params['state'] = 'archive'
+    params['tag'] = archive_tag
+  else:
+    # state is unread
+    params['state'] = 'unread'
+
+  items =  get_item_list(params, before, since)
+  return items
 
 # choose items to put back into the user List
-def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount):
+def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount, before, since):
 
   def run_lucky_dip(attempts):
     if connection_live() == True:
@@ -176,8 +212,8 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
 
       # get everything in the archive with the archive_tag
       params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
-      request = get(params)
-      tbr = request.json()['list']
+
+      tbr = get_item_list(params, before, since)
 
       # before we go any further, make sure there actually is something in the TBR list!
       if len(tbr) > 0:
@@ -331,7 +367,12 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         if not random_choice:
           completed_message += str(chosen['longreads']) + ' long reads and ' + str(chosen['shortreads']) + ' short reads, '
         # add this to the end regardless
-        completed_message += 'with ' + str(remaining) + ' other items remaining to be read.'
+        caveat = ''
+        if before:
+          caveat = 'last updated earlier than ' + str(before) + ' days ago '
+        if since:
+          caveat = 'last updated more recently than ' + str(since) + ' days ago '
+        completed_message += 'with ' + str(remaining) + ' other items ' + caveat + 'remaining to be read.'
         return completed_message
       # else if there's nothing tagged with the archive_tag
       else:
@@ -352,7 +393,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
 #  purge tags
 # -----------------
 
-def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_token):
+def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_token, before, since):
 
   params = {
     "consumer_key": consumer_key, 
@@ -364,45 +405,33 @@ def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_toke
   # check we're online
   if connection_live() == True:
     # GET the list
-    request = get(params).json()['list']
+    request = get_item_list(params, before, since)
     actions = []
 
-    for item in request:
-      # find the item tags
-      item_tags = []
-      if 'tags' in request[item]:
-        for tag in request[item]['tags']:
-          item_tags.append(tag)
-      # keep any retain_tags like we use in stash
-      if len(item_tags) > 0:
-        update = {"item_id": item, "action": "tags_replace"} # item is the ID because it's the dict key
+    if len(request) > 0:
+      for item in request:
+        item_tags = []
+        # find the item tags
+        if 'tags' in request[item]:
+          for tag in request[item]['tags']:
+            item_tags.append(tag)
+        # keep any retain_tags like we use in stash
         retain_tags.add(archive_tag) # we don't want to wipe out the archive tag on archived items!
-        update["tags"] = list(retain_tags.intersection(item_tags))
+        update = {"item_id": item} 
+        intersect = list(retain_tags.intersection(item_tags))
+        if len(intersect) > 0:
+          update['action'] = 'tags_replace' # item is the ID because it's the dict key
+          update["tags"] = intersect # update tags to keep the retain_tags
+        # otherwise just clear all tags
+        else:
+          update['action'] = 'tags_clear' # item is the ID because it's the dict key
         actions.append(update)
-      # otherwise just clear all tags
-      else:
-        update = {"item_id": item, "action": "tags_clear"} # item is the ID because it's the dict key
-        actions.append(update)
-
-    process_items(actions, consumer_key, pocket_access_token)
-    return '\033[0;36mUndesirable elements have been purged.\033[0;m' 
-
-# -----------------
-# refresh
-# -----------------
-
-def refresh(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount):
-  # this is the job that should run regularly
-  # run stash
-  stash_msg = stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags)
-  print(stash_msg)
-  if stash_msg != '\033[0;31mSorry, no connection after 4 attempts.\033[0;m':
-    # run lucky_dip
-    print('\033[0;36mRunning lucky dip...\033[0;m')
-    ld_message = lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount)
-    return ld_message
-  else:
-    return '\033[0;31mRefresh aborted.\033[0;m'
+      
+      process_items(actions, consumer_key, pocket_access_token)
+      return '\033[1;36mUndesirable elements have been purged.\033[1;m' 
+    
+    else:
+      return '\033[0;36mNo items from which to purge tags.\033[0;m'
 
 """
 Stash
@@ -422,83 +451,81 @@ favorite - boolean indicating whether to ignore (i.e. leave in the user list) fa
 # stash items
 # -----------------
 
-def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags):
+def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, before, since):
+  print('\033[0;36mStashing items...\033[0;m')
   # if ignore_faves is set to True, don't get favorite items
+  params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
   if favorite:
-    params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread", "favorite": "0"}
-    print('\033[0;36mStashing items...\033[0;m')
+    params['favorite'] = "0"
     print('\033[0;36mSkipping favorited items...\033[0;m')
-  else:
-    params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
 
   def run_stash(attempts):
-      if connection_live() == True:
-        # GET the list
-        request = get(params)
-        list_items = request.json()
-        actions = []
-        item_list = list_items['list']
-        # copy items_list so we can alter the copy whilst iterating through the original
-        items_to_stash = dict(item_list)
-        for item in item_list:
-          item_tags = []
-          if 'tags' in item_list[item]:
-            for tag in item_list[item]['tags']:
-              item_tags.append(tag)
+    if connection_live() == True:
+      # GET the list
+      item_list = get_item_list(params, before, since)
+      # we store all the 'actions' in an array, then send one big HTTP request to the Pocket API
+      actions = []
+      # copy items_list so we can alter the copy whilst iterating through the original
+      items_to_stash = dict(item_list)
+      for item in item_list:
+        item_tags = []
+        if 'tags' in item_list[item]:
+          for tag in item_list[item]['tags']:
+            item_tags.append(tag)
 
-          # filter out any items with the ignore tags before dealing with the rest
-          if len(ignore_tags) > 0 and len(ignore_tags.intersection(item_tags)) > 0:
-              # pop it out of the items_to_stash
-              items_to_stash.pop(item, None)
-          # Now we process all the tags first, before we archive everything
-          elif replace_all_tags:
-            # set up the action dict
-            action = {"item_id": item, "action": "tags_replace"} # item is the ID because it's the dict key
-            # are we retaining any tags?
-            if retain_tags: # retain_tags should either be False or a Set
-              # find the common tags between retain_tags and item_tags
-              # to do this we need retain_tags to be a set, but you can't JSON serialise a set, so we need to turn the result into a list afterwards
-              tags_to_keep = list(retain_tags.intersection(item_tags))
-              # don't forget to add the archive_tag!
-              tags_to_keep.append(archive_tag)
-              action["tags"] = tags_to_keep
-            # Anything that is still in the user list can be presumed to not have been read
-            # when they read it they will archive it (without the archive_tag because lucky_dip removes it)
-            else:
-              action["tags"] = archive_tag
-            actions.append(action)
-          else: # if replace_all_tags is False, just add the archive tag without removing any tags
-            action = {"item_id": item, "action": "tags_add"} # add new tag rather than replacing all of them
+        # filter out any items with the ignore tags before dealing with the rest
+        if len(ignore_tags) > 0 and len(ignore_tags.intersection(item_tags)) > 0:
+            # pop it out of the items_to_stash
+            items_to_stash.pop(item, None)
+        # Now we process all the tags first, before we archive everything
+        elif replace_all_tags:
+          # set up the action dict
+          action = {"item_id": item, "action": "tags_replace"} # item is the ID because it's the dict key
+          # are we retaining any tags?
+          if retain_tags: # retain_tags should either be False or a Set
+            # find the common tags between retain_tags and item_tags
+            # to do this we need retain_tags to be a set, but you can't JSON serialise a set, so we need to turn the result into a list afterwards
+            tags_to_keep = list(retain_tags.intersection(item_tags))
+            # don't forget to add the archive_tag!
+            tags_to_keep.append(archive_tag)
+            action["tags"] = tags_to_keep
+          # Anything that is still in the user list can be presumed to not have been read
+          # when they read it they will archive it (without the archive_tag because lucky_dip removes it)
+          else:
             action["tags"] = archive_tag
-            actions.append(action)
+          actions.append(action)
+        else: # if replace_all_tags is False, just add the archive tag without removing any tags
+          action = {"item_id": item, "action": "tags_add"} # add new tag rather than replacing all of them
+          action["tags"] = archive_tag
+          actions.append(action)
 
-        # Update the tags
-        process_items(actions, consumer_key, pocket_access_token)
+      # Update the tags
+      process_items(actions, consumer_key, pocket_access_token)
 
-        # Now archive everything
-        archive_actions = []
+      # Now archive everything
+      archive_actions = []
 
-        for item in items_to_stash:
-          item_action = {"item_id": item, "action": "archive"}
-          archive_actions.append(item_action)
+      for item in items_to_stash:
+        item_action = {"item_id": item, "action": "archive"}
+        archive_actions.append(item_action)
 
-        print('\033[0;36mArchiving ' + str(len(archive_actions)) + ' items...\033[0;m')
+      print('\033[0;36mArchiving ' + str(len(archive_actions)) + ' items...\033[0;m')
 
-         # archive items
-        process_items(archive_actions, consumer_key, pocket_access_token)
+        # archive items
+      process_items(archive_actions, consumer_key, pocket_access_token)
 
-        # return a list of what was stashed and, if relevant, what wasn't
-        skipped_items = len(item_list) - len(items_to_stash)
-        return str(len(items_to_stash)) + ' items archived with "' + archive_tag + '" and ' + str(skipped_items) + ' items skipped due to retain tag.'
+      # return a list of what was stashed and, if relevant, what wasn't
+      skipped_items = len(item_list) - len(items_to_stash)
+      return str(len(items_to_stash)) + ' items archived with "' + archive_tag + '" and ' + str(skipped_items) + ' items skipped due to retain tag.'
+    else:
+      if attempts < 4:
+        attempts += 1
+        time.sleep(10)
+        print('\033[0;36mAttempting to connect...\033[0;m')
+        return run_stash(attempts)
       else:
-        if attempts < 4:
-          attempts += 1
-          time.sleep(10)
-          print('\033[0;36mAttempting to connect...\033[0;m')
-          return run_stash(attempts)
-        else:
-          msg = "\033[0;31mSorry, no connection after 4 attempts.\033[0;m"
-          return msg
+        msg = "\033[0;31mSorry, no connection after 4 attempts.\033[0;m"
+        return msg
 
   return run_stash(0)
 
