@@ -25,15 +25,11 @@
 # Import libraries
 # ----------------
 
-import requests
 from argparse import ArgumentParser
 
 # bundled with Python
-from datetime import datetime
-import json
-import sys
-import urllib
-import webbrowser
+import os
+import subprocess
 
 # local modules
 import settings
@@ -108,6 +104,9 @@ admin.add_argument(
 )
 admin.add_argument(
     "-u", "--authorise", action="store_true", help="authorise app to connect to a Pocket account"
+)
+admin.add_argument(
+  "--schedule", action="store_true", help="schedule pocketsnack commands to run automatically"
 )
 
 options = parser.parse_args()
@@ -203,7 +202,12 @@ if __name__ == '__main__':
   elif options.test:
     result = pt.test(consumer_key, settings.pocket_access_token)
     print(result)
-  
+
+  elif options.schedule:
+    print('scheduling...')
+    path = os.path.dirname(os.path.realpath(__file__))
+    subprocess.Popen(['./schedule.sh'], cwd=path)
+
   elif set(true_vars).intersection(orphans):
     print('\n   That command cannot be used by itself. Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
 
