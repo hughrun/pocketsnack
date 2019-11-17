@@ -13,9 +13,11 @@ The automation of `pocketsnack refresh` has _also_ been removed. This didn't rea
 
 ## Getting started
 
+### Quick version
+
 1. make sure you have installed Python 3 and it is callable with `python3`
 2. copy `settings-example.py` to `settings.py`
-3. create Pocket app and paste consumer key into settings.py
+3. create Pocket app and paste consumer key into `settings.py`
 4. run `bash install.sh` and follow the prompts
 
 ### Dependencies
@@ -63,7 +65,7 @@ Outputs the first article returned by a call to the API. Normally you will never
 
 This command has an 's', not a 'z', and the short version is a 'u', not an 'a'.
 
-You need this to authorise your app. Everything else works exclusively on the command line, but _authorise_ needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, wait for you to confirm that you have completed the authorisation (by typing 'done') and then add the token to `settings.py`.
+You need this to authorise your app. This command is automatically run by `install.sh`. Everything else works exclusively on the command line, but _authorise_ needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, wait for you to confirm that you have completed the authorisation (by typing 'done') and then add the token to `settings.py`. Use it if you want to change the Pocket account you are using with pocketsnack.
 
 ## action commands
 
@@ -85,7 +87,7 @@ Adds the archive tag to everything in your list, and then archives them. Dependi
 
 ### -a, --archive
 
-This tells you how many items are in your archive and how many of them are 'long reads'. You can set the wordcount defining a long read in `settings.py`. Use with `--info`.
+Used in combination with `--info`, this tells you how many items are in your archive and how many of them are 'long reads'. You can set the wordcount defining a long read in `settings.py`. Used with `--purge`, it purges tags on items in the archive.
 
 ### -l, --list
 
@@ -93,15 +95,15 @@ Same as _archive_ but for your list instead of your archive.
 
 ### -b, -all
 
-For use with `--purge` - purge tags from both the List and the Archive.
+For use with `--purge` - purge tags from _both_ the List and the Archive.
 
 ### -n, --since SINCE
 
-Restrict the current action to only items updated more recently than _SINCE_ number of days,
+Restrict the current _action command_ to only items updated more recently than _SINCE_ number of days,
 
 ### -o, --before BEFORE
 
-Restrict the current action to only items updated less recently than _BEFORE_ number of days,
+Restrict the current _action command_ to only items updated less recently than _BEFORE_ number of days,
 
 ## Uninstalling or moving to a new directory
 
