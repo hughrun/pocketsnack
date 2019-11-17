@@ -1,6 +1,8 @@
 # pocket-snack
 When your Pocket list is overwhelming, pocket-snack lets you see just what you can read today
 
+This is the version 2 README. If you haven't yet upgraded you can still use the [version 1 README](v1_README.md).
+
 ## A note on version 2
 
 All commands have changed since version 1 - read the _Usage_ section carefully. This was necessary in order to provide better functionality without making the code too confusing.
@@ -106,6 +108,10 @@ Restrict the current _action command_ to only items updated more recently than _
 ### -o, --before BEFORE
 
 Restrict the current _action command_ to only items updated less recently than _BEFORE_ number of days.
+
+### What does 'updated' mean?
+
+The Pocket API does not store a value for the date an items was first added. The only value we can get is _since_, which is a timestamp updated every time there is an update made to an item via or equivalent to any `add` or `modify` [API action](https://getpocket.com/developer/docs/overview). This could be when it is added to the List, move to the archive, moved out of the archive back into the List, or has changes made to tags (even if that tag update results in no actual change - i.e. if `--purge` has been run against the item, regardless of whether it had any tags to begin with).
 
 ## examples
 
