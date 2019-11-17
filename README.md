@@ -77,7 +77,9 @@ Returns items with the archive tag from the archive to the list, and removes the
 
 You can use **purge_tags** to clear all tags in your List, Archive, or both, excluding the `archive_tag` and any `retain_tags`. This is useful if you've been using the Aus GLAM Blogs Pocket tool or anything else that retains the original tags from articles.
 
-`purge_tags` requires a second argument: `--list`, `--archive`, or `--all`, depending on where you want to purge tags.
+`--purge` requires a second argument: `--list`, `--archive`, or `--all`, depending on where you want to purge tags.
+
+**NOTE** that by design, `--purge` will process **all** items in your archive, not just items with the `archive_tag`. This may lead to miss-matches between the number returned by `--info --archive` and the number of items processed by `--purge --archive`.
 
 ### -s, --stash
 
@@ -117,7 +119,7 @@ Stash only items NOT updated in the last 7 days:
 
 Purge tags on all items in the List that were updated in the last day:
 
-`pocketsnack -pn 1`
+`pocketsnack -pln 1`
 
 Run lucky_dip:
 
