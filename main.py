@@ -101,9 +101,6 @@ actions.add_argument(
     "-p", "--purge", action="store_true", help="remove all tags from list, archive, or both, depending on the second argument provided and excepting tags listed in 'retain_tags' in settings"
 )
 actions.add_argument(
-    "-r", "--refresh", action="store_true", help="run 'stash' and then 'lucky_dip' in one operation"
-)
-actions.add_argument(
     "-s", "--stash", action="store_true", help="add 'tbr' tag to all items in user list and archive them, with exceptions as per settings"
 )
 admin.add_argument(
@@ -142,53 +139,39 @@ if __name__ == '__main__':
 
   elif options.info:
 
-    def print_info(collection, items, longreads):
+    def print_info(response, collection):
+      items = str(len(response))
+      longreads = 0
+      for item in response:
+        # is it a long read?
+        if 'word_count' in response[item]:
+          words = int(response[item]['word_count'])
+          longread = True if  words > settings.longreads_wordcount else False
+        else:
+          longread = False
+        if longread:
+          longreads += 1
+
       if options.before:
-        print(collection + 'has ' + items + ' items ' + 'updated prior to ' + str(options.before) + ' days ago and ' + longreads + ' are longreads.')
+        print(collection + 'has ' + items + ' items ' + 'updated prior to ' + str(options.before) + ' days ago and ' + str(longreads) + ' are longreads.')
       elif options.since:
-        print(collection + 'has ' + items + ' items ' + 'updated since ' + str(options.since) + ' days ago and ' + longreads + ' are longreads.')
+        print(collection + 'has ' + items + ' items ' + 'updated since ' + str(options.since) + ' days ago and ' + str(longreads) + ' are longreads.')
       else:
-        print(collection + 'has ' + items + ' items and '  + longreads + ' are longreads.')
+        print(collection + 'has ' + items + ' items and '  + str(longreads) + ' are longreads.')
 
     if options.archive:
-      collection = 'The TBR archive '
-      # Retrieve info about the user's list
       response = pt.info(consumer_key, settings.pocket_access_token, archive_tag, options.before, options.since)
-      if 'list' in response:
-        items = response['list']
-        longreads = 0
-        for item in items:
-          # is it a long read?
-          if 'word_count' in items[item]:
-            words = int(items[item]['word_count'])
-            longread = True if  words > settings.longreads_wordcount else False
-          else:
-            longread = False
-          if longread:
-            longreads += 1
-        print_info(collection, str(len(items)), str(longreads))
+      if len(response) > 0:
+        print_info(response, 'The TBR archive ')
       else:
-          print('No items match that query')
+        print('No items match that query')
 
     elif options.list:
-      collection = 'The user List '
-      # Retrieve info about the user's list
       response = pt.info(consumer_key, settings.pocket_access_token, False, options.before, options.since)
-      if 'list' in response:
-        items = response['list']
-        longreads = 0
-        for item in items:
-          # is it a long read?
-          if 'word_count' in items[item]:
-            words = int(items[item]['word_count'])
-            longread = True if  words > settings.longreads_wordcount else False
-          else:
-            longread = False
-          if longread:
-            longreads += 1
-        print_info(collection, str(len(items)), str(longreads))
+      if len(response) > 0:
+        print_info(response, 'The user List ')
       else:
-          print('No items match that query')
+        print('No items match that query')
 
     else:
       print('\n   \033[0;36m--info\033[0;m requires a second argument (-a or -l). Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
@@ -212,12 +195,6 @@ if __name__ == '__main__':
 
     else:
       print('\n   \033[0;36m--purge\033[0;m requires a second argument (-a, -l or -b). Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
-
-  
-  # elif options.refresh:
-  #   print('Refreshing at ' + datetime.now().strftime('%a %d %b %Y %H:%M'))
-  #   refresh = pt.refresh(*refresh_settings, options.before, options.since)
-  #   print('\033[0;36m' + refresh + '\033[0;m')
 
   elif options.stash:
     stash = pt.stash(consumer_key, settings.pocket_access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves, settings.ignore_tags, options.before, options.since)

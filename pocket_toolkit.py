@@ -82,6 +82,25 @@ def get_timestamp(since):
   strptime = time.strptime(since_time)
   return time.mktime(strptime) # return Unix timestamp
 
+def get_item_list(params, before, since):
+  if before:
+    all_items = get(params)
+    params['since'] = get_timestamp(before)
+    since_items = get(params)
+    # get non-intersection of 2 groups to get only items last changed 'before'
+    item_list = all_items.json()['list'] # everything
+    since_list = since_items.json()['list'] # only things since 'before'
+    if len(since_list) > 0:
+      for key in since_list.keys():
+        item_list.pop(key, None) # remove everything from items_list that is in since_list
+    return item_list
+  elif since:
+    timestamp = get_timestamp(since)
+    params['since'] = timestamp
+    return get(params).json()['list']
+  else:
+    return get(params).json()['list']
+
 # --------------------
 # process tag updates
 # --------------------
@@ -167,29 +186,10 @@ def info(consumer_key, pocket_access_token, archive_tag, before, since):
   else:
     # state is unread
     params['state'] = 'unread'
-  if before:
-    # get all items using params
-    all_items = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
-    params['since'] = get_timestamp(before)
-    since_items = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
-    # get non-intersection of 2 groups to get only items changed 'before'
-    items_list = all_items.json()['list'] # everything
-    since_list = since_items.json()['list'] # only things since 'before'
-    if len(since_list) > 0:
-      for key in since_list.keys():
-        items_list.pop(key, None) # remove everything from items_list that is in since_list
-    return_value = {}
-    return_value['list'] = items_list # reconstruct the dict
-    return return_value
-  elif since:
-    params['since'] = get_timestamp(since)
-    request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
-    return request.json()
-  else:
-    # if no before/since params just gert everything in either the list or archive according to params
-    request = requests.post('https://getpocket.com/v3/get', headers=headers, params=params)
-    return request.json()
-    
+
+  items =  get_item_list(params, before, since)
+  return items
+
 # choose items to put back into the user List
 def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount, before, since):
 
@@ -213,25 +213,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
       # get everything in the archive with the archive_tag
       params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
 
-      if before:
-        all_items = get(params)
-        params['since'] = get_timestamp(before)
-        since_items = get(params)
-        # get non-intersection of 2 groups to get only items last changed 'before'
-        tbr = all_items.json()['list'] # everything
-        since_list = since_items.json()['list'] # only things since 'before'
-        if len(since_list) > 0:
-          for key in since_list.keys():
-            tbr.pop(key, None) # remove everything from items_list that is in since_list
-      elif since:
-        timestamp = get_timestamp(since)
-        params['since'] = timestamp
-        tbr = get(params).json()['list']
-      else:
-        tbr = get(params).json()['list']
-      
-      # request = get(params)
-      # tbr = request.json()['list']
+      tbr = get_item_list(params, before, since)
 
       # before we go any further, make sure there actually is something in the TBR list!
       if len(tbr) > 0:
@@ -387,9 +369,9 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         # add this to the end regardless
         caveat = ''
         if before:
-          caveat = 'last updated before ' + str(before) + ' days ago '
+          caveat = 'last updated earlier than ' + str(before) + ' days ago '
         if since:
-          caveat = 'last updated after ' + str(since) + ' days ago '
+          caveat = 'last updated more recently than ' + str(since) + ' days ago '
         completed_message += 'with ' + str(remaining) + ' other items ' + caveat + 'remaining to be read.'
         return completed_message
       # else if there's nothing tagged with the archive_tag
@@ -446,24 +428,6 @@ def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_toke
     process_items(actions, consumer_key, pocket_access_token)
     return '\033[0;36mUndesirable elements have been purged.\033[0;m' 
 
-# -----------------
-# refresh
-# -----------------
-
-
-# def refresh(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount, before, since):
-#   # this is the job that should run regularly
-#   # run stash
-#   stash_msg = stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, before, since)
-#   print(stash_msg)
-#   if stash_msg != '\033[0;31mSorry, no connection after 4 attempts.\033[0;m':
-#     # run lucky_dip
-#     print('\033[0;36mRunning lucky dip...\033[0;m')
-#     ld_message = lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount)
-#     return ld_message
-#   else:
-#     return '\033[0;31mRefresh aborted.\033[0;m'
-
 """
 Stash
 
@@ -492,24 +456,8 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
 
   def run_stash(attempts):
     if connection_live() == True:
-      # GET the list, first checking for before/after flags
-      if before:
-        all_items = get(params)
-        params['since'] = get_timestamp(before)
-        since_items = get(params)
-        # get non-intersection of 2 groups to get only items last changed 'before'
-        item_list = all_items.json()['list'] # everything
-        since_list = since_items.json()['list'] # only things since 'before'
-        if len(since_list) > 0:
-          for key in since_list.keys():
-            item_list.pop(key, None) # remove everything from items_list that is in since_list
-      elif since:
-        timestamp = get_timestamp(since)
-        params['since'] = timestamp
-        item_list = get(params).json()['list']
-      else:
-        item_list = get(params).json()['list']
-
+      # GET the list
+      item_list = get_item_list(params, before, since)
       # we store all the 'actions' in an array, then send one big HTTP request to the Pocket API
       actions = []
       # copy items_list so we can alter the copy whilst iterating through the original
