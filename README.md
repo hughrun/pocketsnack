@@ -99,11 +99,33 @@ For use with `--purge` - purge tags from _both_ the List and the Archive.
 
 ### -n, --since SINCE
 
-Restrict the current _action command_ to only items updated more recently than _SINCE_ number of days,
+Restrict the current _action command_ to only items updated more recently than _SINCE_ number of days.
 
 ### -o, --before BEFORE
 
-Restrict the current _action command_ to only items updated less recently than _BEFORE_ number of days,
+Restrict the current _action command_ to only items updated less recently than _BEFORE_ number of days.
+
+## examples
+
+Stash only items updated in the last 2 days:  
+
+`pocketsnack --stash -n 2`
+
+Stash only items NOT updated in the last 7 days:  
+
+`pocketsnack --stash -o 7`
+
+Purge tags on all items in the List that were updated in the last day:
+
+`pocketsnack -pn 1`
+
+Run lucky_dip:
+
+`pocketsnack --lucky_dip`
+
+Run lucky_dip but only choose from items last updated longer ago than one week:
+
+`pocketsnack -l -o 7`
 
 ## Uninstalling or moving to a new directory
 
