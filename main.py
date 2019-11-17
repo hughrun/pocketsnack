@@ -180,17 +180,17 @@ if __name__ == '__main__':
 
     if options.list:
       print('\033[0;36mPurging tags in the list\033[0;m')
-      purge = pt.purge_tags('unread', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token)
+      purge = pt.purge_tags('unread', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token, options.before, options.since)
       print(purge)
 
     elif options.archive:
       print('\033[0;36mPurging tags in the archive\033[0;m')
-      purge = pt.purge_tags('archive', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token)
+      purge = pt.purge_tags('archive', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token, options.before, options.since)
       print(purge)
 
     elif options.all:
       print('\033[0;36mPurging tags in both the archive and the list\033[0;m')
-      purge = pt.purge_tags('all', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token)
+      purge = pt.purge_tags('all', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token, options.before, options.since)
       print(purge)
 
     else:

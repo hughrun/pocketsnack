@@ -393,7 +393,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
 #  purge tags
 # -----------------
 
-def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_token):
+def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_token, before, since):
 
   params = {
     "consumer_key": consumer_key, 
@@ -405,28 +405,33 @@ def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_toke
   # check we're online
   if connection_live() == True:
     # GET the list
-    request = get(params).json()['list']
+    request = get_item_list(params, before, since)
     actions = []
 
-    for item in request:
-      # find the item tags
-      item_tags = []
-      if 'tags' in request[item]:
-        for tag in request[item]['tags']:
-          item_tags.append(tag)
-      # keep any retain_tags like we use in stash
-      if len(item_tags) > 0:
-        update = {"item_id": item, "action": "tags_replace"} # item is the ID because it's the dict key
+    if len(request) > 0:
+      for item in request:
+        item_tags = []
+        # find the item tags
+        if 'tags' in request[item]:
+          for tag in request[item]['tags']:
+            item_tags.append(tag)
+        # keep any retain_tags like we use in stash
         retain_tags.add(archive_tag) # we don't want to wipe out the archive tag on archived items!
-        update["tags"] = list(retain_tags.intersection(item_tags))
+        update = {"item_id": item} 
+        intersect = list(retain_tags.intersection(item_tags))
+        if len(intersect) > 0:
+          update['action'] = 'tags_replace' # item is the ID because it's the dict key
+          update["tags"] = intersect # update tags to keep the retain_tags
+        # otherwise just clear all tags
+        else:
+          update['action'] = 'tags_clear' # item is the ID because it's the dict key
         actions.append(update)
-      # otherwise just clear all tags
-      else:
-        update = {"item_id": item, "action": "tags_clear"} # item is the ID because it's the dict key
-        actions.append(update)
-
-    process_items(actions, consumer_key, pocket_access_token)
-    return '\033[0;36mUndesirable elements have been purged.\033[0;m' 
+      
+      process_items(actions, consumer_key, pocket_access_token)
+      return '\033[1;36mUndesirable elements have been purged.\033[1;m' 
+    
+    else:
+      return '\033[0;36mNo items from which to purge tags.\033[0;m'
 
 """
 Stash
