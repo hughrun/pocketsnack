@@ -125,7 +125,7 @@ Run lucky_dip:
 
 Run lucky_dip but only choose from items last updated longer ago than one week:
 
-`pocketsnack -l -o 7`
+`pocketsnack -d -o 7`
 
 ## Uninstalling or moving to a new directory
 
