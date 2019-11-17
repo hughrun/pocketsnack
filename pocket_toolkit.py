@@ -212,11 +212,26 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
 
       # get everything in the archive with the archive_tag
       params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "state": "archive", "tag": archive_tag}
+
+      if before:
+        all_items = get(params)
+        params['since'] = get_timestamp(before)
+        since_items = get(params)
+        # get non-intersection of 2 groups to get only items last changed 'before'
+        tbr = all_items.json()['list'] # everything
+        since_list = since_items.json()['list'] # only things since 'before'
+        if len(since_list) > 0:
+          for key in since_list.keys():
+            tbr.pop(key, None) # remove everything from items_list that is in since_list
+      elif since:
+        timestamp = get_timestamp(since)
+        params['since'] = timestamp
+        tbr = get(params).json()['list']
+      else:
+        tbr = get(params).json()['list']
       
-      # TODO: check before and since
-      
-      request = get(params)
-      tbr = request.json()['list']
+      # request = get(params)
+      # tbr = request.json()['list']
 
       # before we go any further, make sure there actually is something in the TBR list!
       if len(tbr) > 0:
@@ -370,7 +385,12 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         if not random_choice:
           completed_message += str(chosen['longreads']) + ' long reads and ' + str(chosen['shortreads']) + ' short reads, '
         # add this to the end regardless
-        completed_message += 'with ' + str(remaining) + ' other items remaining to be read.'
+        caveat = ''
+        if before:
+          caveat = 'last updated before ' + str(before) + ' days ago '
+        if since:
+          caveat = 'last updated after ' + str(since) + ' days ago '
+        completed_message += 'with ' + str(remaining) + ' other items ' + caveat + 'remaining to be read.'
         return completed_message
       # else if there's nothing tagged with the archive_tag
       else:
@@ -469,13 +489,10 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
   if favorite:
     params['favorite'] = "0"
     print('\033[0;36mSkipping favorited items...\033[0;m')
-  # before or since flags exist, add the 'since' param
-  # TESTING: check 'before' runs properly
 
   def run_stash(attempts):
     if connection_live() == True:
-      # GET the list
-    
+      # GET the list, first checking for before/after flags
       if before:
         all_items = get(params)
         params['since'] = get_timestamp(before)
@@ -486,7 +503,6 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
         if len(since_list) > 0:
           for key in since_list.keys():
             item_list.pop(key, None) # remove everything from items_list that is in since_list
-
       elif since:
         timestamp = get_timestamp(since)
         params['since'] = timestamp
