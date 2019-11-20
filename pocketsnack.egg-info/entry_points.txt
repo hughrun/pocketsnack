@@ -1,0 +1,3 @@
+[console_scripts]
+pocketsnack = pocketsnack:main_func
+

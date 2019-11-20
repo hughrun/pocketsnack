@@ -1,4 +1,5 @@
 # pocket-snack
+
 When your Pocket list is overwhelming, pocket-snack lets you see just what you can read today
 
 This is the version 2 README. If you haven't yet upgraded you can still use the [version 1 README](v1_README.md).
@@ -8,9 +9,11 @@ This is the version 2 README. If you haven't yet upgraded you can still use the 
 All commands have changed since version 1 - read the _Usage_ section carefully. This was necessary in order to provide better functionality without making the code too confusing.
 
 One of the changes is that the `refresh` command from version 1 no longer exists. This is so that `--since`, and `--before` can be used with both `--stash` and `lucky_dip`. If you want replicate `refresh` you simply need to run `--stash` followed by `--lucky_dip`. From the command line you could do:
+
 ```bash
 pocketsnack -s && pocketsnack -d
 ```
+
 The automation of `pocketsnack refresh` has _also_ been removed. This didn't really work very consistently, and was causing a lot of maintenance headaches. I'm looking at how to bring it back in a different way, but for now it's been removed.
 
 ## Getting started
