@@ -32,8 +32,8 @@ import os
 import subprocess
 
 # local modules
-import settings
-import pocket_toolkit as pt
+from settings import settings
+from lib import toolkit as pt
 
 # ----------------
 # Settings
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     print(auth)
 
   elif options.lucky_dip:
-    print('\033[0;36mRunning lucky dip...\033[0;m')
+    print('\033[0;36m  Running lucky dip...\033[0;m')
     dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.num_videos, settings.num_images, settings.num_longreads, settings.longreads_wordcount, options.before, options.since)
     print('\033[0;36m' + dip + '\033[0;m')
 
@@ -149,23 +149,23 @@ if __name__ == '__main__':
           longreads += 1
 
       if options.before:
-        print(collection + 'has ' + items + ' items ' + 'updated prior to ' + str(options.before) + ' days ago and ' + str(longreads) + ' are longreads.')
+        print(collection + 'has ' + items + ' items ' + 'updated prior to ' + str(options.before) + ' days ago and ' + str(longreads) + ' are longreads.\033[0;m')
       elif options.since:
-        print(collection + 'has ' + items + ' items ' + 'updated since ' + str(options.since) + ' days ago and ' + str(longreads) + ' are longreads.')
+        print(collection + 'has ' + items + ' items ' + 'updated since ' + str(options.since) + ' days ago and ' + str(longreads) + ' are longreads.\033[0;m')
       else:
-        print(collection + 'has ' + items + ' items and '  + str(longreads) + ' are longreads.')
+        print(collection + 'has ' + items + ' items and '  + str(longreads) + ' are longreads.\033[0;m')
 
     if options.archive:
       response = pt.info(consumer_key, settings.pocket_access_token, archive_tag, options.before, options.since)
       if len(response) > 0:
-        print_info(response, 'The TBR archive ')
+        print_info(response, '\033[0;36m  The TBR archive ')
       else:
-        print('No items match that query')
+        print('\033[0;36m  No items match that query\033[0;m')
 
     elif options.list:
       response = pt.info(consumer_key, settings.pocket_access_token, False, options.before, options.since)
       if len(response) > 0:
-        print_info(response, 'The user List ')
+        print_info(response, '\033[0;36m  The user List ')
       else:
         print('No items match that query')
 
@@ -175,17 +175,17 @@ if __name__ == '__main__':
   elif options.purge:
 
     if options.list:
-      print('\033[0;36mPurging tags in the list\033[0;m')
+      print('\033[0;36m  Purging tags in the list\033[0;m')
       purge = pt.purge_tags('unread', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token, options.before, options.since)
       print(purge)
 
     elif options.archive:
-      print('\033[0;36mPurging tags in the archive\033[0;m')
+      print('\033[0;36m  Purging tags in the archive\033[0;m')
       purge = pt.purge_tags('archive', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token, options.before, options.since)
       print(purge)
 
     elif options.all:
-      print('\033[0;36mPurging tags in both the archive and the list\033[0;m')
+      print('\033[0;36m  Purging tags in both the archive and the list\033[0;m')
       purge = pt.purge_tags('all', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token, options.before, options.since)
       print(purge)
 
@@ -204,4 +204,4 @@ if __name__ == '__main__':
     print('\n   That command cannot be used by itself. Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
 
   else:
-    print('\033[0;36mpocketsnack\033[0;m requires commands and/or flags to do anything useful. Try \033[0;36mpocketsnack -h\033[0;m for more information')
+    print('\033[0;36m  pocketsnack\033[0;m requires commands and/or flags to do anything useful. Try \033[0;36mpocketsnack -h\033[0;m for more information')

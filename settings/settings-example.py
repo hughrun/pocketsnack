@@ -1,6 +1,6 @@
 pocket_consumer_key = '' # paste the 'consumer key' from your Pocket app between the quotes here
 pocket_redirect_uri = 'https://hugh.run/success'
-items_per_cycle = 10 # integer
+items_per_cycle = 10 # integer, not a string
 archive_tag = 'tbr' # apply this tag before archiving items. This is case-insensitive and Pocket will always downcase it
 ignore_tags = {'ignore'} # don't stash any items with these tags
 ignore_faves = True # don't stash items that are favorited

@@ -36,9 +36,6 @@ import time
 import urllib
 import webbrowser
 
-# local modules
-import settings
-
 # ----------------
 # Create app
 # ----------------
@@ -52,7 +49,6 @@ import settings
 # reusable functions
 # -----------------
 
-# (TODO: make this a proper class object)
 # Pocket expects particular HTTP headers to send and receive JSON
 headers = {"Content-Type": "application/json; charset=UTF-8", "X-Accept": "application/json"}
 
@@ -136,7 +132,7 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
   # get the JSON response and save the token to a param for the next step
   request_token = requestOne.json()['code']
   # print the request token to the console so you know it happened
-  print('\033[0;36mYour request token (code) is \033[0;m' + request_token)
+  print('\033[0;36m  Your request token (code) is \033[0;m' + request_token)
 
   # now you need to authorise the app in your Pocket account
   # build the url
@@ -147,7 +143,7 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
   # We're not writing a server app here so we use a little hack to check whether the user has finished authorising before we continue
   # Just wait for the user (you!) to indicate they have finished authorising the app
   # the '\n' prints a new line
-  print('\033[0;36mAuthorise your app in the browser tab that just opened.\033[0;m')
+  print('\033[0;36m  Authorise your app in the browser tab that just opened.\033[0;m')
   user_input = input('Type "done" when you have finished authorising the app in Pocket \n>>')
 
   if user_input == "done":
@@ -158,16 +154,17 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
     # get the JSON response as a Python dictionary and call it 'res'.
     res = requestTwo.json()
     # Finally we have the access token!
-    print('\033[0;36mAccess token for ' + res['username'] + ' is \033[0;m' + res['access_token'])
+    print('\033[0;36m  Access token for ' + res['username'] + ' is \033[0;m' + res['access_token'])
     # Assign the access token to a parameter called access_token
     access_token = res['access_token']
     # replace the pocket_access_token line rather than just adding an extra at the end
-    settings_file = fileinput.FileInput("settings.py", inplace=True)
+    # TODO: change this file path
+    settings_file = fileinput.FileInput("pocketsnack/settings.py", inplace=True)
     repl = "pocket_access_token = " + "'" + access_token + "'"
     for line in settings_file:
       line = re.sub('(pocket_access_token)+.*', repl, line)
       print(line.rstrip())
-    return '\033[0;36mToken added to settings.py - you are ready to use pocketsnack.\033[0;m'
+    return '\033[0;36m  Token added to settings.py - you are ready to use pocketsnack!\033[0;m 🎉'
 
 # ------------------------------
 # Read info about Pocket account
@@ -357,7 +354,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         for v in chosen.values():
           tot_added += v
         remaining = available - tot_added
-        completed_message = 'Success! ' + str(tot_added) + ' items added to your reading list, including '
+        completed_message = '  \033[0;36mSuccess! ' + str(tot_added) + ' items added to your reading list, including '
         if random_choice:
           completed_message += str(chosen['random']) + ' random articles, '
         if tot_images:
@@ -372,19 +369,19 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
           caveat = 'last updated earlier than ' + str(before) + ' days ago '
         if since:
           caveat = 'last updated more recently than ' + str(since) + ' days ago '
-        completed_message += 'with ' + str(remaining) + ' other items ' + caveat + 'remaining to be read.'
+        completed_message += 'with ' + str(remaining) + ' other items ' + caveat + 'remaining to be read.\033[0;m'
         return completed_message
       # else if there's nothing tagged with the archive_tag
       else:
-        return 'Nothing to be read!'
+        return '\033[0;36m  Nothing to be read!\033[0;m'
     else:
       if attempts < 4:
         attempts += 1
         time.sleep(10)
-        print('\033[0;36mAttempting to connect...\033[0;m')
+        print('\033[0;36m  Attempting to connect...\033[0;m')
         return run_lucky_dip(attempts)
       else:
-        msg = "\033[0;36mSorry, no connection after 4 attempts.\033[0;m"
+        msg = "\033[0;36m  Sorry, no connection after 4 attempts.\033[0;m"
         return msg
 
   return run_lucky_dip(0)
@@ -428,10 +425,10 @@ def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_toke
         actions.append(update)
       
       process_items(actions, consumer_key, pocket_access_token)
-      return '\033[1;36mUndesirable elements have been purged.\033[1;m' 
+      return '\033[1;36m  Undesirable elements have been purged.\033[1;m' 
     
     else:
-      return '\033[0;36mNo items from which to purge tags.\033[0;m'
+      return '\033[0;36m  No items from which to purge tags.\033[0;m'
 
 """
 Stash
@@ -452,12 +449,12 @@ favorite - boolean indicating whether to ignore (i.e. leave in the user list) fa
 # -----------------
 
 def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, before, since):
-  print('\033[0;36mStashing items...\033[0;m')
+  print('\033[0;36m  Stashing items...\033[0;m')
   # if ignore_faves is set to True, don't get favorite items
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
   if favorite:
     params['favorite'] = "0"
-    print('\033[0;36mSkipping favorited items...\033[0;m')
+    print('\033[0;36m  Skipping favorited items...\033[0;m')
 
   def run_stash(attempts):
     if connection_live() == True:
@@ -509,22 +506,22 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
         item_action = {"item_id": item, "action": "archive"}
         archive_actions.append(item_action)
 
-      print('\033[0;36mArchiving ' + str(len(archive_actions)) + ' items...\033[0;m')
+      print('\033[0;36m  Archiving ' + str(len(archive_actions)) + ' items...\033[0;m')
 
         # archive items
       process_items(archive_actions, consumer_key, pocket_access_token)
 
       # return a list of what was stashed and, if relevant, what wasn't
       skipped_items = len(item_list) - len(items_to_stash)
-      return str(len(items_to_stash)) + ' items archived with "' + archive_tag + '" and ' + str(skipped_items) + ' items skipped due to retain tag.'
+      return '  ' + str(len(items_to_stash)) + ' items archived with "' + archive_tag + '" and ' + str(skipped_items) + ' items skipped due to retain tag.'
     else:
       if attempts < 4:
         attempts += 1
         time.sleep(10)
-        print('\033[0;36mAttempting to connect...\033[0;m')
+        print('\033[0;36m  Attempting to connect...\033[0;m')
         return run_stash(attempts)
       else:
-        msg = "\033[0;31mSorry, no connection after 4 attempts.\033[0;m"
+        msg = "\033[0;31m  Sorry, no connection after 4 attempts.\033[0;m"
         return msg
 
   return run_stash(0)
