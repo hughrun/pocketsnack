@@ -1,8 +1,0 @@
-README.md
-setup.py
-pocketsnack.egg-info/PKG-INFO
-pocketsnack.egg-info/SOURCES.txt
-pocketsnack.egg-info/dependency_links.txt
-pocketsnack.egg-info/entry_points.txt
-pocketsnack.egg-info/requires.txt
-pocketsnack.egg-info/top_level.txt

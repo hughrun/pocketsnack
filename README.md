@@ -18,37 +18,32 @@ The automation of `pocketsnack refresh` has _also_ been removed. This didn't rea
 
 ## Getting started
 
-### Quick version
+1. make sure you have installed Python 3
+2. download `pocketsnack` using git or the download link in **Releases**
+3. move into the top `pocketsnack` directory
+4. `pip3 install .` or if pip points to Python3, `pip install .`
+5. Edit `settings/settings.py`
 
-1. make sure you have installed Python 3 and it is callable with `python3`
-2. copy `settings-example.py` to `settings.py`
-3. create Pocket app and paste consumer key into `settings.py`
-4. run `bash install.sh` and follow the prompts
+### Installing Python 3
 
-### Dependencies
-
-You will need Python 3.x installed and it must be called by `python3`, rather than `python`. These instructions, and the install script, assume you are using a Unix-like (Linux, BSD, MacOS) operating system. Microsoft Windows is not currently supported.
-
-On MacOS the easiest thing to do is to [install Python 3 using Homebrew](https://docs.brew.sh/Homebrew-and-Python): `brew install python`.
-
-The install script should install the `requests` module for you when you run `bash install.sh`. If you prefer, you can install it manually using **pip**: `pip3 install requests`
+You will need Python 3.x installed. On MacOS the easiest thing to do is to [install Python 3 using Homebrew](https://docs.brew.sh/Homebrew-and-Python): `brew install python`.
 
 ### Settings
 
-You will need to copy **settings-example.py** to a new file called **settings.py** before you start. You can do this however you like, but from the command line you could use `cp settings-example.py settings.py`, and then edit it with a text editor like `nano`.
+You will need to copy `settings/settings-example.py` to a new file - `settings/settings.py` before you start. You can do this however you like, but from the command line you could use `cp settings/settings-example.py settings/settings.py`, and then edit it with a text editor like `nano` or VS Code, but any text editor will do the job.
 
-You can adjust most settings, but the defaults in **settings-example.py** should be ok for most users. Check the comments in **settings.example.py** for an explanation of each setting.
+You can adjust most settings, but the defaults in `settings-example.py` should be ok for most users. Check the comments in `settings.example.py` for an explanation of each setting.
 
 ### Creating a Pocket consumer key for your app
 
 1. Log in to Pocket in a web browser
-2. Go to https://getpocket.com/developer and click 'CREATE NEW APP'
-3. Complete the form: you will need all permissions, and the platform should be 'Desktop (other)'
-4. Your new app will show a 'consumer key', which you need to paste into the first line in settings.py
+2. Go to `https://getpocket.com/developer` and click 'CREATE NEW APP'
+3. Complete the form: you will need all permissions, and the platform should be _Desktop (other)_
+4. Your new app will show a **consumer key**, which you need to paste into the first line in `settings.py`
 
-### Pocket access token
+### Authorising your app with a Pocket access token
 
-Pocket uses OAuth to confirm that your app has permission from your user account to do stuff in your account. This means you need to authorise the app before you can do anything else. Once you have copied you app consumer key into settings.py, when you run the `install.sh` bash script, this will run `authorise` for you. If you prefer to install manually, or want to change the Pocket account details, you should run `pocketsnack --authorise` to get your token (see below).
+Pocket uses OAuth to confirm that your app has permission from your user account to do stuff in your account. This means you need to authorise the app before you can do anything else. Once you have copied your app consumer key into settings.py, run `pocketsnack --authorise` to get your token.
 
 You should now have a line at the bottom of settings.py saying something like `pocket_access_token = 'aa11bb-zz9900xx'`
 
@@ -70,7 +65,7 @@ Outputs the first article returned by a call to the API. Normally you will never
 
 This command has an 's', not a 'z', and the short version is a 'u', not an 'a'.
 
-You need this to authorise your app. This command is automatically run by `install.sh`. Everything else works exclusively on the command line, but _authorise_ needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, wait for you to confirm that you have completed the authorisation (by typing 'done') and then add the token to `settings.py`. Use it if you want to change the Pocket account you are using with pocketsnack.
+You need this to authorise your app. Everything else works exclusively on the command line, but _authorise_ needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, wait for you to confirm that you have completed the authorisation (by typing 'done') and then add the token to `settings.py`. You also need to run `--authorise` if you want to change the Pocket account you are using with `pocketsnack`.
 
 ## action commands
 
@@ -140,13 +135,16 @@ Run lucky_dip but only choose from items last updated longer ago than one week:
 
 ## Uninstalling or moving to a new directory
 
-Don't like _pocket-snack_ any more or want to re-install it in a new directory? No problem, you will just need to do a little maintenance:
+### If you installed with pip
 
-1. Delete the executable link - if you don't do this when re-installing in a different directory, running `pocketsnack` will fail because it will still be pointing at the old directory.
+Just run `pip uninstall pocketsnack` or `pip3 uninstall pocketsnack`.
 
-   `rm /usr/local/bin/pocketsnack`
+### If you installed using the legacy install.sh script
 
-2. Now you can safely delete the pocket-snack directory.
+1. Delete the executable link: `rm /usr/local/bin/pocketsnack`  
+
+If you don't do this when re-installing in a different directory, running `pocketsnack` will fail because it will still be pointing at the old directory.
+2. Now you can safely delete the pocket-snack directory: `rm -r pocketsnack`
 
 ## Bugs and suggestions
 
