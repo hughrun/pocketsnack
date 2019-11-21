@@ -1,8 +1,8 @@
-# pocket-snack
+# pocketsnack
 
 When your Pocket list is overwhelming, pocket-snack lets you see just what you can read today
 
-This is the version 2 README. If you haven't yet upgraded you can still use the [version 1 README](v1_README.md).
+This is the version 2 documentation. If you haven't yet upgraded you can still use the [version 1 README](v1_README.md).
 
 ## A note on version 2
 
@@ -19,7 +19,7 @@ The automation of `pocketsnack refresh` has _also_ been removed. This didn't rea
 ## Getting started
 
 1. make sure you have installed Python 3
-2. download `pocketsnack` using git or the download link in **Releases**
+2. download `pocketsnack` using git or the download link in [releases](releases)
 3. move into the top `pocketsnack` directory
 4. `pip3 install .` or if pip points to Python3, `pip install .`
 5. Edit `settings/settings.py`
