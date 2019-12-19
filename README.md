@@ -16,13 +16,15 @@ pocketsnack -s && pocketsnack -d
 
 The automation of `pocketsnack refresh` has _also_ been removed. This didn't really work very consistently, and was causing a lot of maintenance headaches. I'm looking at how to bring it back in a different way, but for now it's been removed.
 
-## Getting started
+## Getting started (tl;dr)
 
-1. make sure you have installed Python 3
+1. make sure you have installed Python version 3.x (preferably 3.7 or higher)
 2. download `pocketsnack` using git or the download link in [releases](releases)
-3. move into the top `pocketsnack` directory
+3. move into the top `pocketsnack` directory (i.e. `cd pocketsnack`)
 4. `pip3 install .` or if pip points to Python3, `pip install .`
-5. Edit `settings/settings.py`
+5. Add Pocket consumer key to `settings/settings.py`
+6. `pocketsnack --authorise`
+7. You are now ready to enjoy using pocketsnack
 
 ### Installing Python 3
 
@@ -30,7 +32,9 @@ You will need Python 3.x installed. On MacOS the easiest thing to do is to [inst
 
 ### Settings
 
-You will need to copy `settings/settings-example.py` to a new file - `settings/settings.py` before you start. You can do this however you like, but from the command line you could use `cp settings/settings-example.py settings/settings.py`, and then edit it with a text editor like `nano` or VS Code, but any text editor will do the job.
+You will need to copy `settings/settings-example.py` to a new file - `settings/settings.py` before you start. You can do this however you like, but from the command line you could use:
+`cp settings/settings-example.py settings/settings.py`, 
+and then edit it with a text editor like `nano` or VS Code, but any text editor will do the job - you could even use TextEdit or Notepad.
 
 You can adjust most settings, but the defaults in `settings-example.py` should be ok for most users. Check the comments in `settings.example.py` for an explanation of each setting.
 

@@ -158,8 +158,7 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
     # Assign the access token to a parameter called access_token
     access_token = res['access_token']
     # replace the pocket_access_token line rather than just adding an extra at the end
-    # TODO: change this file path
-    settings_file = fileinput.FileInput("pocketsnack/settings.py", inplace=True)
+    settings_file = fileinput.FileInput("settings/settings.py", inplace=True)
     repl = "pocket_access_token = " + "'" + access_token + "'"
     for line in settings_file:
       line = re.sub('(pocket_access_token)+.*', repl, line)
