@@ -440,8 +440,12 @@ Stash applies the archive_tag to all items in the User List, then archives every
 
 Options:
 
-retain_tags - a list of tags that should not be removed from items when adding the archive_tag. If you don't want to retain any tags, this value should be False. Defaults to False
-favorite - boolean indicating whether to ignore (i.e. leave in the user list) favorite items. Defaults to True
+  retain_tags - a list of tags that should not be removed from items when adding the archive_tag. 
+  If you don't want to retain any tags, this value should be False. 
+  Defaults to False
+
+  favorite - boolean indicating whether to ignore (i.e. leave in the user list) favorite items  
+  Defaults to True
 
 """
 
@@ -547,10 +551,6 @@ def test(consumer_key, pocket_access_token):
 
 def dedupe(state, tag, consumer_key, pocket_access_token):
 
-  location = tag if tag else state if state == ('all' or 'both') else 'list'
-
-  print('Checking for duplicates in ' + location)
-
   # Retrieving items
   # ----------------
   # retrieve all 'unread' items (i.e. not archived)
@@ -580,7 +580,7 @@ def dedupe(state, tag, consumer_key, pocket_access_token):
 
   # loop over each key (not the whole object) in item_list
   # 'item' here refers to each item's key, not the whole object/dictionary
-  print('checking ' + str(len(item_list)) + ' items...')
+  print('  checking ' + str(len(item_list)) + ' items...')
   for item in item_list:
     # conveniently the key Pocket uses is the item_id!
     item_id = item
@@ -614,7 +614,7 @@ def dedupe(state, tag, consumer_key, pocket_access_token):
     
     # if the length of the list is more than 1, then by definition there must be a duplicate
     if len(summary[item]) > 1:
-      print(item + ' occurs ' + str(len(summary[item])) + ' times')
+      print('  \033[0;36m' + item + '\033[0;m occurs ' + str(len(summary[item])) + ' times')
       # keep only the most recently added item by slicing the list to make a new list of everything except the last one (which will be the *first* one that was found)
       duplicates = summary[item][:-1]
       # add each duplicate in the duplicates list for this url to the items_to_delete list
@@ -636,8 +636,8 @@ def dedupe(state, tag, consumer_key, pocket_access_token):
 
   # Double check you really want to delete them
   if len(actions) > 0:
-    print('\033[107;95m  About to delete ' + str(len(actions)) + ' duplicate items.\033[0;m')
-    print('\033[107;95m  Delete these items? Type "delete" to confirm.\033[0;m')
+    print('  \033[107;95mAbout to delete ' + str(len(actions)) + ' duplicate items.\033[0;m')
+    print('  \033[107;95mDelete these items? Type "delete" to confirm.\033[0;m')
     check = input('>>')
     if check == 'delete':
       # first turn the list and its component dictionaries into a JSON string
@@ -650,13 +650,13 @@ def dedupe(state, tag, consumer_key, pocket_access_token):
       # 'deleted' is a raw http response (it should return '<Response [200]>') 
       # so we need to turn it into a Python string before we can do a comparison
       if str(deleted) == '<Response [200]>':
-        print('🚮 These duplicates have been deleted:')
+        print('  \033[46;97m🚮 These duplicates have been deleted:\033[0;m')
         for item in actions:
-          print(item['item_id'])
+          print('  \033[46;97m' + item['item_id'] + '\033[0;m')
         # that's it!
       else:
-        print('Something went wrong 😟')
+        print('  \033[46;97mSomething went wrong 😟\033[0;m')
     else:
-      print('✋ deletion cancelled')
+      print('  \033[46;97m✋ deletion cancelled\033[0;m')
   else:
-    print('🎉 No duplicates found!')
+    print('  🎉 \033[46;97mNo duplicates found!\033[0;m')
