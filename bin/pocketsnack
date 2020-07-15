@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-# pocket-snack - a Python3 tool to help you retain your sanity when using your Pocket account
-
-# Copyright (C) 2019  Hugh Rundle
+# pocketsnack - a Python tool to help you retain your sanity when using your Pocket account
+# Copyright (C) 2018 - 2020 Hugh Rundle
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# You can contact Hugh on Mastodon at @hugh@ausglam.space
-# or Twitter at @hughrundle
-# or email hugh [at] hughrundle [dot] net
+# You can contact Hugh on email: hugh [at] hughrundle [dot] net
 
 # ----------------
 # Import libraries
@@ -42,6 +39,7 @@ from lib import toolkit as pt
 # TODO: clean this up
 
 # assign short variable names from the settings file
+access_token = settings.pocket_access_token
 consumer_key = settings.pocket_consumer_key
 redirect_uri = settings.pocket_redirect_uri
 archive_tag = settings.archive_tag
@@ -49,7 +47,7 @@ archive_tag = settings.archive_tag
 # settings dict for other vars
 refresh_settings = [
   consumer_key,
-  settings.pocket_access_token,
+  access_token,
   archive_tag,
   settings.replace_all_tags,
   settings.retain_tags,
@@ -66,7 +64,7 @@ refresh_settings = [
 # argparser arguments
 # ----------------
 
-parser = ArgumentParser(description='\033[1;36mpocketsnack: a command line tool for decluttering your Pocket account\033[1;m')
+parser = ArgumentParser(description='\033[1;36mpocketsnack: KonMari your Pocket tsundoku from the command line.\033[1;m')
 admin = parser.add_argument_group('admin commands')
 actions = parser.add_argument_group('action commands')
 mex = parser.add_mutually_exclusive_group()
@@ -80,6 +78,9 @@ mex.add_argument(
 )
 actions.add_argument(
     "-d", "--lucky_dip", action="store_true", help="move random items tagged 'tbr' from archive to list, depending on settings"
+)
+actions.add_argument(
+    "--dedupe", action="store_true", help="de-duplicate list (-l), archive (-a), tbr items (--tbr) or all (-b)- defaults to list"
 )
 actions.add_argument(
     "-i", "--info", action="store_true", help="get information on items in list or TBR items in archive"
@@ -101,6 +102,9 @@ actions.add_argument(
 )
 admin.add_argument(
     "-t", "--test", action="store_true", help="test whether API call returns data"
+)
+mex.add_argument(
+    "--tbr", action="store_true", help="used in conjuction with --dedupe to dedupe only items in the tbr archive."
 )
 admin.add_argument(
     "-u", "--authorise", action="store_true", help="authorise app to connect to a Pocket account"
@@ -128,9 +132,19 @@ if __name__ == '__main__':
     auth = pt.authorise(consumer_key, redirect_uri)
     print(auth)
 
+  elif options.dedupe:
+    if options.tbr:
+      state = "archive"
+      tag = settings.archive_tag
+    else:
+      state = "archive" if options.archive else "all" if options.all else "unread"
+      tag = False
+    
+    dd = pt.dedupe(state, tag, consumer_key, access_token)
+
   elif options.lucky_dip:
     print('\033[0;36m  Running lucky dip...\033[0;m')
-    dip = pt.lucky_dip(consumer_key, settings.pocket_access_token, settings.archive_tag, settings.items_per_cycle, settings.num_videos, settings.num_images, settings.num_longreads, settings.longreads_wordcount, options.before, options.since)
+    dip = pt.lucky_dip(consumer_key, access_token, settings.archive_tag, settings.items_per_cycle, settings.num_videos, settings.num_images, settings.num_longreads, settings.longreads_wordcount, options.before, options.since)
     print('\033[0;36m' + dip + '\033[0;m')
 
   elif options.info:
@@ -156,14 +170,14 @@ if __name__ == '__main__':
         print(collection + 'has ' + items + ' items and '  + str(longreads) + ' are longreads.\033[0;m')
 
     if options.archive:
-      response = pt.info(consumer_key, settings.pocket_access_token, archive_tag, options.before, options.since)
+      response = pt.info(consumer_key, access_token, archive_tag, options.before, options.since)
       if len(response) > 0:
         print_info(response, '\033[0;36m  The TBR archive ')
       else:
         print('\033[0;36m  No items match that query\033[0;m')
 
     elif options.list:
-      response = pt.info(consumer_key, settings.pocket_access_token, False, options.before, options.since)
+      response = pt.info(consumer_key, access_token, False, options.before, options.since)
       if len(response) > 0:
         print_info(response, '\033[0;36m  The user List ')
       else:
@@ -176,28 +190,28 @@ if __name__ == '__main__':
 
     if options.list:
       print('\033[0;36m  Purging tags in the list\033[0;m')
-      purge = pt.purge_tags('unread', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token, options.before, options.since)
+      purge = pt.purge_tags('unread', settings.retain_tags, archive_tag, consumer_key, access_token, options.before, options.since)
       print(purge)
 
     elif options.archive:
       print('\033[0;36m  Purging tags in the archive\033[0;m')
-      purge = pt.purge_tags('archive', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token, options.before, options.since)
+      purge = pt.purge_tags('archive', settings.retain_tags, archive_tag, consumer_key, access_token, options.before, options.since)
       print(purge)
 
     elif options.all:
       print('\033[0;36m  Purging tags in both the archive and the list\033[0;m')
-      purge = pt.purge_tags('all', settings.retain_tags, archive_tag, consumer_key, settings.pocket_access_token, options.before, options.since)
+      purge = pt.purge_tags('all', settings.retain_tags, archive_tag, consumer_key, access_token, options.before, options.since)
       print(purge)
 
     else:
       print('\n   \033[0;36m--purge\033[0;m requires a second argument (-a, -l or -b). Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
 
   elif options.stash:
-    stash = pt.stash(consumer_key, settings.pocket_access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves, settings.ignore_tags, options.before, options.since)
+    stash = pt.stash(consumer_key, access_token, archive_tag, settings.replace_all_tags, settings.retain_tags, settings.ignore_faves, settings.ignore_tags, options.before, options.since)
     print('\033[0;36m' + stash + '\033[0;m')
 
   elif options.test:
-    result = pt.test(consumer_key, settings.pocket_access_token)
+    result = pt.test(consumer_key, access_token)
     print(result)
 
   elif set(true_vars).intersection(orphans):

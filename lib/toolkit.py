@@ -186,7 +186,10 @@ def info(consumer_key, pocket_access_token, archive_tag, before, since):
   items =  get_item_list(params, before, since)
   return items
 
-# choose items to put back into the user List
+# -----------------------------------
+# lucky dip from archive back to list
+# -----------------------------------
+
 def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount, before, since):
 
   def run_lucky_dip(attempts):
@@ -219,9 +222,9 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
 
         # we'll use this to report what was added
         chosen = {}
-        #####################
+
         # filtering formats
-        #####################
+        # -----------------
         videos = []
         images = []
 
@@ -255,9 +258,8 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
             items_needed -= len(selected_images)
           chosen['images'] = len(selected_images)
 
-        #####################
         # filtering longreads
-        #####################
+        # -------------------
         if num_longreads:
           long_reads = []
           for item in tbr:
@@ -538,3 +540,123 @@ def test(consumer_key, pocket_access_token):
   list_items = request.json()
 
   return json.dumps(list_items, indent=4, default=str)
+
+# -----------------
+# de-duplicate
+# -----------------
+
+def dedupe(state, tag, consumer_key, pocket_access_token):
+
+  location = tag if tag else state if state == ('all' or 'both') else 'list'
+
+  print('Checking for duplicates in ' + location)
+
+  # Retrieving items
+  # ----------------
+  # retrieve all 'unread' items (i.e. not archived)
+  # we use the Retrieve API call = https://getpocket.com/developer/docs/v3/retrieve
+  # The endpoint for retrieving is 'get': https://getpocket.com/v3/get
+  # detailType should be 'simple' because we don't need any information except for the item_id and the resolved_url
+  parameters = {
+    "consumer_key" : consumer_key, 
+    "access_token" : pocket_access_token, 
+    "detailType" : "simple",
+    "state" : state
+    }
+
+  if tag:
+    parameters['tag'] = tag  # if tag exists, add it to parameters
+
+  unread = get(parameters)
+  # our items will be under the JSON object's "list" key
+  item_list = unread.json()['list']
+  
+  # make a new dictionary called 'summary'
+  # we will use this to look for duplicates
+  summary = {}  
+
+  # and make a list called 'items_to_delete'
+  items_to_delete = []
+
+  # loop over each key (not the whole object) in item_list
+  # 'item' here refers to each item's key, not the whole object/dictionary
+  print('checking ' + str(len(item_list)) + ' items...')
+  for item in item_list:
+    # conveniently the key Pocket uses is the item_id!
+    item_id = item
+
+    # we need the item_id from this request so we can use it in the next API call to delete it
+    # get the URL by pulling out the value from the dict using the key
+    # generally we want to use the 'resolved url' but sometimes that might not exist
+    # if so, use the 'given url' instead
+    if not 'resolved_url' in item_list[item]:
+      # item_list is a Python dictionary where each value is itself another dictionary
+      # or in JSON terms, it's an object where each value is another object
+      # below we are getting the value of the current item id (i.e the first dict), then checking if there is a value within the second dict for the key 'given_url'
+      item_url = item_list[item]['given_url']
+    else:  
+      item_url = item_list[item]['resolved_url']
+    
+    # check whether the resolved_url is already in 'summary'
+    # if it isn't, make a new entry with resolved_url as the key and a list holding item_id as the value - basically we're reversing the logic of 'item_list'. This will allow us to check for duplicates easily in a moment.
+    if not item_url in summary:
+      summary[item_url] = [item_id]
+    # if it is there already, add the item_id into the existing list
+    else:
+      summary[item_url].append(item_id)
+
+  # ------------------
+  # Finding duplicates
+  # ------------------
+
+  # now we look for duplicates (this is why we use the url as the key)
+  for item in summary:
+    
+    # if the length of the list is more than 1, then by definition there must be a duplicate
+    if len(summary[item]) > 1:
+      print(item + ' occurs ' + str(len(summary[item])) + ' times')
+      # keep only the most recently added item by slicing the list to make a new list of everything except the last one (which will be the *first* one that was found)
+      duplicates = summary[item][:-1]
+      # add each duplicate in the duplicates list for this url to the items_to_delete list
+      for item in duplicates:
+        items_to_delete.append(item)
+
+  # Deleting duplicates
+  # -------------------
+
+  # now use the modify API call to delete duplicate items
+  # Docs - https://getpocket.com/developer/docs/v3/modify
+
+  # With our list of duplicate item ids, we create one final list of a bunch of JSON objects
+  actions = []
+
+  # for each item to be deleted, append a dictionary to the actions list
+  for item_id in items_to_delete:
+    actions.append({"action":"delete", "item_id": item_id})
+
+  # Double check you really want to delete them
+  if len(actions) > 0:
+    print('\033[107;95m  About to delete ' + str(len(actions)) + ' duplicate items.\033[0;m')
+    print('\033[107;95m  Delete these items? Type "delete" to confirm.\033[0;m')
+    check = input('>>')
+    if check == 'delete':
+      # first turn the list and its component dictionaries into a JSON string
+      actions_string = json.dumps(actions)
+      # now URL encode it using urllib
+      actions_escaped = urllib.parse.quote(actions_string)
+      # now POST to pocket and assign the response to a parameter at the same time.
+      deleted = send(actions_escaped, pocket_access_token, consumer_key)
+      # provide feedback on what happened
+      # 'deleted' is a raw http response (it should return '<Response [200]>') 
+      # so we need to turn it into a Python string before we can do a comparison
+      if str(deleted) == '<Response [200]>':
+        print('🚮 These duplicates have been deleted:')
+        for item in actions:
+          print(item['item_id'])
+        # that's it!
+      else:
+        print('Something went wrong 😟')
+    else:
+      print('✋ deletion cancelled')
+  else:
+    print('🎉 No duplicates found!')
