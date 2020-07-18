@@ -33,8 +33,8 @@ Then edit it with a text editor like `nano`, Atom or VS Code, but any text edito
 
 You can adjust most settings, but the defaults in `settings-example.yaml` should be sensible for most users.
 
-| setting              | type    | description                           |
-| :--------------------| ---:--- | :------------------------------------ |
+| setting              | type    | description                           |  
+| :------------------- | :---:   | :------------------------------------ |  
 | pocket_consumer_key  | string  | the consumer key provided by Pocket when you register your 'app' (see below)|
 | items_per_cycle      | integer | how many items you want to bring in to the List from your `tbr` archive when using `--lucky_dip`|
 | archive_tag          | string  | the tag to use to identify items in your 'to be read' archive|
@@ -51,7 +51,7 @@ You can adjust most settings, but the defaults in `settings-example.yaml` should
 ### Creating a Pocket consumer key for your app
 
 1. Log in to Pocket in a web browser
-2. Go to `https://getpocket.com/developer` and click 'CREATE NEW APP'
+2. Go to [`https://getpocket.com/developer`](https://getpocket.com/developer) and click 'CREATE NEW APP'
 3. Complete the form: you will need all permissions, and the platform should be _Desktop (other)_
 4. Your new app will show a **consumer key**, which you need to paste into the first line in `settings.yaml`
 
