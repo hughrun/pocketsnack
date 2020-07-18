@@ -1,0 +1,16 @@
+pocket_consumer_key: YOUR_KEY_HERE
+items_per_cycle: 10
+archive_tag: tbr
+ignore_tags: 
+  - ignore
+ignore_faves: true
+replace_all_tags: false
+retain_tags:
+  - glam blog club
+  - aus glam blogs
+  - empocketer
+longreads_wordcount: 3000
+num_videos: null
+num_images: null
+num_longreads: 2
+pocket_access_token: null

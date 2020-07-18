@@ -125,7 +125,8 @@ def process_items(actions, consumer_key, pocket_access_token):
 # Authorise
 # ----------------
 
-def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
+def authorise(consumer_key): # With an 's'. Deal with it.
+  redirect_uri = 'https://hugh.run/success'
   paramsOne = {"consumer_key": consumer_key, "redirect_uri": redirect_uri}
   # set up step 1 request - this should return a 'code' aka 'request token'
   requestOne = requests.post('https://getpocket.com/v3/oauth/request', headers=headers, params=paramsOne)
@@ -158,8 +159,8 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
     # Assign the access token to a parameter called access_token
     access_token = res['access_token']
     # replace the pocket_access_token line rather than just adding an extra at the end
-    settings_file = fileinput.FileInput("settings/settings.py", inplace=True)
-    repl = "pocket_access_token = " + "'" + access_token + "'"
+    settings_file = fileinput.FileInput("settings/settings.yaml", inplace=True)
+    repl = "pocket_access_token: " + access_token
     for line in settings_file:
       line = re.sub('(pocket_access_token)+.*', repl, line)
       print(line.rstrip())
@@ -399,6 +400,10 @@ def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_toke
     "state": state, 
     "detailType": "complete"
     }
+
+  if state == "tbr":
+    params['state'] = 'archive'
+    params['tag'] = archive_tag
 
   # check we're online
   if connection_live() == True:
