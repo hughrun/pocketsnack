@@ -1,5 +1,5 @@
-settings.py
-
+settings.yaml
+logo/
 # Setuptools distribution folder.
 /dist/
 

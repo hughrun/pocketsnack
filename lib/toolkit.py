@@ -1,6 +1,6 @@
 # pocket-toolkit - a collection of functions to manage your Pocket account
 
-# Copyright (C) 2019  Hugh Rundle
+# Copyright (C) 2018 - 2020 Hugh Rundle
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -125,7 +125,8 @@ def process_items(actions, consumer_key, pocket_access_token):
 # Authorise
 # ----------------
 
-def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
+def authorise(consumer_key): # With an 's'. Deal with it.
+  redirect_uri = 'https://hugh.run/success'
   paramsOne = {"consumer_key": consumer_key, "redirect_uri": redirect_uri}
   # set up step 1 request - this should return a 'code' aka 'request token'
   requestOne = requests.post('https://getpocket.com/v3/oauth/request', headers=headers, params=paramsOne)
@@ -158,8 +159,8 @@ def authorise(consumer_key, redirect_uri): # With an 's'. Deal with it.
     # Assign the access token to a parameter called access_token
     access_token = res['access_token']
     # replace the pocket_access_token line rather than just adding an extra at the end
-    settings_file = fileinput.FileInput("settings/settings.py", inplace=True)
-    repl = "pocket_access_token = " + "'" + access_token + "'"
+    settings_file = fileinput.FileInput("settings/settings.yaml", inplace=True)
+    repl = "pocket_access_token: " + access_token
     for line in settings_file:
       line = re.sub('(pocket_access_token)+.*', repl, line)
       print(line.rstrip())
@@ -186,7 +187,10 @@ def info(consumer_key, pocket_access_token, archive_tag, before, since):
   items =  get_item_list(params, before, since)
   return items
 
-# choose items to put back into the user List
+# -----------------------------------
+# lucky dip from archive back to list
+# -----------------------------------
+
 def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, num_videos, num_images, num_longreads, longreads_wordcount, before, since):
 
   def run_lucky_dip(attempts):
@@ -219,9 +223,9 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
 
         # we'll use this to report what was added
         chosen = {}
-        #####################
+
         # filtering formats
-        #####################
+        # -----------------
         videos = []
         images = []
 
@@ -255,9 +259,8 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
             items_needed -= len(selected_images)
           chosen['images'] = len(selected_images)
 
-        #####################
         # filtering longreads
-        #####################
+        # -------------------
         if num_longreads:
           long_reads = []
           for item in tbr:
@@ -353,7 +356,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         for v in chosen.values():
           tot_added += v
         remaining = available - tot_added
-        completed_message = '  \033[0;36mSuccess! ' + str(tot_added) + ' items added to your reading list, including '
+        completed_message = '\033[46;97mSuccess!\033[0;m ' + str(tot_added) + ' items added to your reading list, including '
         if random_choice:
           completed_message += str(chosen['random']) + ' random articles, '
         if tot_images:
@@ -368,19 +371,19 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
           caveat = 'last updated earlier than ' + str(before) + ' days ago '
         if since:
           caveat = 'last updated more recently than ' + str(since) + ' days ago '
-        completed_message += 'with ' + str(remaining) + ' other items ' + caveat + 'remaining to be read.\033[0;m'
+        completed_message += 'with ' + str(remaining) + ' other items ' + caveat + 'remaining to be read.'
         return completed_message
       # else if there's nothing tagged with the archive_tag
       else:
-        return '\033[0;36m  Nothing to be read!\033[0;m'
+        return '  \033[46;97mNothing to be read!\033[0;m'
     else:
       if attempts < 4:
         attempts += 1
         time.sleep(10)
-        print('\033[0;36m  Attempting to connect...\033[0;m')
+        print('  \033[46;97mAttempting to connect...\033[0;m')
         return run_lucky_dip(attempts)
       else:
-        msg = "\033[0;36m  Sorry, no connection after 4 attempts.\033[0;m"
+        msg = "  \033[46;97mSorry, no connection after 4 attempts.\033[0;m"
         return msg
 
   return run_lucky_dip(0)
@@ -397,6 +400,10 @@ def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_toke
     "state": state, 
     "detailType": "complete"
     }
+
+  if state == "tbr":
+    params['state'] = 'archive'
+    params['tag'] = archive_tag
 
   # check we're online
   if connection_live() == True:
@@ -438,8 +445,12 @@ Stash applies the archive_tag to all items in the User List, then archives every
 
 Options:
 
-retain_tags - a list of tags that should not be removed from items when adding the archive_tag. If you don't want to retain any tags, this value should be False. Defaults to False
-favorite - boolean indicating whether to ignore (i.e. leave in the user list) favorite items. Defaults to True
+  retain_tags - a list of tags that should not be removed from items when adding the archive_tag. 
+  If you don't want to retain any tags, this value should be False. 
+  Defaults to False
+
+  favorite - boolean indicating whether to ignore (i.e. leave in the user list) favorite items  
+  Defaults to True
 
 """
 
@@ -448,12 +459,12 @@ favorite - boolean indicating whether to ignore (i.e. leave in the user list) fa
 # -----------------
 
 def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, before, since):
-  print('\033[0;36m  Stashing items...\033[0;m')
+  print('  \033[46;97mStashing items...\033[0;m')
   # if ignore_faves is set to True, don't get favorite items
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
   if favorite:
     params['favorite'] = "0"
-    print('\033[0;36m  Skipping favorited items...\033[0;m')
+    print('  Skipping favorited items...')
 
   def run_stash(attempts):
     if connection_live() == True:
@@ -505,7 +516,7 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
         item_action = {"item_id": item, "action": "archive"}
         archive_actions.append(item_action)
 
-      print('\033[0;36m  Archiving ' + str(len(archive_actions)) + ' items...\033[0;m')
+      print('  \033[46;97mArchiving ' + str(len(archive_actions)) + ' items...\033[0;m')
 
         # archive items
       process_items(archive_actions, consumer_key, pocket_access_token)
@@ -517,10 +528,10 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
       if attempts < 4:
         attempts += 1
         time.sleep(10)
-        print('\033[0;36m  Attempting to connect...\033[0;m')
+        print('  \033[46;97mAttempting to connect...\033[0;m')
         return run_stash(attempts)
       else:
-        msg = "\033[0;31m  Sorry, no connection after 4 attempts.\033[0;m"
+        msg = "  \033[46;97mSorry, no connection after 4 attempts.\033[0;m"
         return msg
 
   return run_stash(0)
@@ -538,3 +549,119 @@ def test(consumer_key, pocket_access_token):
   list_items = request.json()
 
   return json.dumps(list_items, indent=4, default=str)
+
+# -----------------
+# de-duplicate
+# -----------------
+
+def dedupe(state, tag, consumer_key, pocket_access_token):
+
+  # Retrieving items
+  # ----------------
+  # retrieve all 'unread' items (i.e. not archived)
+  # we use the Retrieve API call = https://getpocket.com/developer/docs/v3/retrieve
+  # The endpoint for retrieving is 'get': https://getpocket.com/v3/get
+  # detailType should be 'simple' because we don't need any information except for the item_id and the resolved_url
+  parameters = {
+    "consumer_key" : consumer_key, 
+    "access_token" : pocket_access_token, 
+    "detailType" : "simple",
+    "state" : state
+    }
+
+  if tag:
+    parameters['tag'] = tag  # if tag exists, add it to parameters
+
+  unread = get(parameters)
+  # our items will be under the JSON object's "list" key
+  item_list = unread.json()['list']
+  
+  # make a new dictionary called 'summary'
+  # we will use this to look for duplicates
+  summary = {}  
+
+  # and make a list called 'items_to_delete'
+  items_to_delete = []
+
+  # loop over each key (not the whole object) in item_list
+  # 'item' here refers to each item's key, not the whole object/dictionary
+  print('  \033[46;97mchecking ' + str(len(item_list)) + ' items...\033[0;m')
+  for item in item_list:
+    # conveniently the key Pocket uses is the item_id!
+    item_id = item
+
+    # we need the item_id from this request so we can use it in the next API call to delete it
+    # get the URL by pulling out the value from the dict using the key
+    # generally we want to use the 'resolved url' but sometimes that might not exist
+    # if so, use the 'given url' instead
+    if not 'resolved_url' in item_list[item]:
+      # item_list is a Python dictionary where each value is itself another dictionary
+      # or in JSON terms, it's an object where each value is another object
+      # below we are getting the value of the current item id (i.e the first dict), then checking if there is a value within the second dict for the key 'given_url'
+      item_url = item_list[item]['given_url']
+    else:  
+      item_url = item_list[item]['resolved_url']
+    
+    # check whether the resolved_url is already in 'summary'
+    # if it isn't, make a new entry with resolved_url as the key and a list holding item_id as the value - basically we're reversing the logic of 'item_list'. This will allow us to check for duplicates easily in a moment.
+    if not item_url in summary:
+      summary[item_url] = [item_id]
+    # if it is there already, add the item_id into the existing list
+    else:
+      summary[item_url].append(item_id)
+
+  # ------------------
+  # Finding duplicates
+  # ------------------
+
+  # now we look for duplicates (this is why we use the url as the key)
+  for item in summary:
+    
+    # if the length of the list is more than 1, then by definition there must be a duplicate
+    if len(summary[item]) > 1:
+      print('  \033[46;97m' + item + '\033[0;m occurs ' + str(len(summary[item])) + ' times')
+      # keep only the most recently added item by slicing the list to make a new list of everything except the last one (which will be the *first* one that was found)
+      duplicates = summary[item][:-1]
+      # add each duplicate in the duplicates list for this url to the items_to_delete list
+      for item in duplicates:
+        items_to_delete.append(item)
+
+  # Deleting duplicates
+  # -------------------
+
+  # now use the modify API call to delete duplicate items
+  # Docs - https://getpocket.com/developer/docs/v3/modify
+
+  # With our list of duplicate item ids, we create one final list of a bunch of JSON objects
+  actions = []
+
+  # for each item to be deleted, append a dictionary to the actions list
+  for item_id in items_to_delete:
+    actions.append({"action":"delete", "item_id": item_id})
+
+  # Double check you really want to delete them
+  if len(actions) > 0:
+    print('  \033[107;95mAbout to delete ' + str(len(actions)) + ' duplicate items.\033[0;m')
+    print('  \033[107;95mDelete these items? Type "delete" to confirm.\033[0;m')
+    check = input('>>')
+    if check == 'delete':
+      # first turn the list and its component dictionaries into a JSON string
+      actions_string = json.dumps(actions)
+      # now URL encode it using urllib
+      actions_escaped = urllib.parse.quote(actions_string)
+      # now POST to pocket and assign the response to a parameter at the same time.
+      deleted = send(actions_escaped, pocket_access_token, consumer_key)
+      # provide feedback on what happened
+      # 'deleted' is a raw http response (it should return '<Response [200]>') 
+      # so we need to turn it into a Python string before we can do a comparison
+      if str(deleted) == '<Response [200]>':
+        print('  \033[46;97m🚮 These duplicates have been deleted:\033[0;m')
+        for item in actions:
+          print('  \033[46;97m' + item['item_id'] + '\033[0;m')
+        # that's it!
+      else:
+        print('  \033[46;97mSomething went wrong 😟\033[0;m')
+    else:
+      print('  \033[46;97m✋ deletion cancelled\033[0;m')
+  else:
+    print('  🎉 \033[46;97mNo duplicates found!\033[0;m')
