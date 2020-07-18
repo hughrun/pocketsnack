@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pocketsnack - a Python tool to help you retain your sanity when using your Pocket account
+# pocketsnack - KonMari your Pocket tsundoku from the command line
 # Copyright (C) 2018 - 2020 Hugh Rundle
 
 # This program is free software: you can redistribute it and/or modify
@@ -125,12 +125,12 @@ for S in yaml.safe_load_all(configyaml):
         state = "archive" if options.archive else "all" if options.all else "unread"
         tag = False
       
-      location = tag if tag else state if state == ('all' or 'both') else 'list'
+      location = tag if tag else state if state != 'unread' else 'list'
       print('  \033[46;97mChecking for duplicates in ' + location + '\033[0;m')
       dd = pt.dedupe(state, tag, consumer_key, access_token)
 
     elif options.lucky_dip:
-      print('  \033[0;36m  Running lucky dip...\033[0;m')
+      print('  \033[46;97mRunning lucky dip...\033[0;m')
       dip = pt.lucky_dip(
         consumer_key, 
         access_token, 
@@ -142,7 +142,7 @@ for S in yaml.safe_load_all(configyaml):
         S['longreads_wordcount'], 
         options.before, 
         options.since)
-      print('  \033[0;36m' + dip + '\033[0;m')
+      print('  \033[46;97m' + dip + '\033[0;m')
 
     elif options.info:
 
@@ -169,24 +169,24 @@ for S in yaml.safe_load_all(configyaml):
       if options.archive:
         response = pt.info(consumer_key, access_token, archive_tag, options.before, options.since)
         if len(response) > 0:
-          print_info(response, '\033[0;36m  The TBR archive ')
+          print_info(response, '  \033[46;97mThe TBR archive ')
         else:
-          print('\033[0;36m  No items match that query\033[0;m')
+          print('  \033[46;97mNo items match that query\033[0;m')
 
       elif options.list:
         response = pt.info(consumer_key, access_token, False, options.before, options.since)
         if len(response) > 0:
-          print_info(response, '\033[0;36m  The user List ')
+          print_info(response, '  \033[46;97mThe user List ')
         else:
-          print('No items match that query')
+          print('  \033[46;97mNo items match that query\033[0;m')
 
       else:
-        print('\n   \033[0;36m--info\033[0;m requires a second argument (-a or -l). Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
+        print('\n  \033[46;97m--info\033[0;m requires a second argument (-a or -l). Check \033[46;97mpocketsnack --help\033[0;m for more information\n')
 
     elif options.purge:
 
       if options.list:
-        print('\033[0;36m  Purging tags in the list\033[0;m')
+        print('  \033[46;97mPurging tags in the list\033[0;m')
         purge = pt.purge_tags(
           'unread', 
           retain_tags, 
@@ -199,7 +199,7 @@ for S in yaml.safe_load_all(configyaml):
         print(purge)
 
       elif options.archive:
-        print('\033[0;36m  Purging tags in the archive\033[0;m')
+        print('  \033[46;97mPurging tags in the archive\033[0;m')
         purge = pt.purge_tags(
           'archive',
           retain_tags, 
@@ -212,7 +212,7 @@ for S in yaml.safe_load_all(configyaml):
         print(purge)
 
       elif options.all:
-        print('\033[0;36m  Purging tags in both the archive and the list\033[0;m')
+        print('  \033[46;97mPurging tags in both the archive and the list\033[0;m')
         purge = pt.purge_tags(
           'all', 
           retain_tags, 
@@ -225,7 +225,7 @@ for S in yaml.safe_load_all(configyaml):
         print(purge)
 
       elif options.tbr:
-        print('\033[0;36m  Purging tags in tbr archive\033[0;m')
+        print('  \033[46;97mPurging tags in tbr archive\033[0;m')
         purge = pt.purge_tags(
           'tbr', 
           retain_tags, 
@@ -238,7 +238,7 @@ for S in yaml.safe_load_all(configyaml):
         print(purge)
 
       else:
-        print('\n   \033[0;36m--purge\033[0;m requires a second argument (-a, -l or -b). Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
+        print('\n  \033[46;97m--purge\033[0;m requires a second argument (-a, -l or -b). Check \033[46;97mpocketsnack --help\033[0;m for more information\n')
 
     elif options.stash:
       stash = pt.stash(
@@ -251,14 +251,14 @@ for S in yaml.safe_load_all(configyaml):
         ignore_tags, 
         options.before, 
         options.since)
-      print('\033[0;36m' + stash + '\033[0;m')
+      print('  \033[46;97m' + stash + '\033[0;m')
 
     elif options.test:
       result = pt.test(consumer_key, access_token)
       print(result)
 
     elif set(true_vars).intersection(orphans):
-      print('\n   That command cannot be used by itself. Check \033[0;36mpocketsnack --help\033[0;m for more information\n')
+      print('\n   That command cannot be used by itself. Check \033[46;97mpocketsnack --help\033[0;m for more information\n')
 
     else:
-      print('\033[0;36m  pocketsnack\033[0;m requires commands and/or flags to do anything useful. Try \033[0;36mpocketsnack -h\033[0;m for more information')
+      print('  \033[46;97mpocketsnack\033[0;m requires commands and/or flags to do anything useful. Try \033[46;97mpocketsnack -h\033[0;m for more information')

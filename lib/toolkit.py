@@ -1,6 +1,6 @@
 # pocket-toolkit - a collection of functions to manage your Pocket account
 
-# Copyright (C) 2019  Hugh Rundle
+# Copyright (C) 2018 - 2020 Hugh Rundle
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -356,7 +356,7 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         for v in chosen.values():
           tot_added += v
         remaining = available - tot_added
-        completed_message = '  \033[0;36mSuccess! ' + str(tot_added) + ' items added to your reading list, including '
+        completed_message = '\033[46;97mSuccess!\033[0;m ' + str(tot_added) + ' items added to your reading list, including '
         if random_choice:
           completed_message += str(chosen['random']) + ' random articles, '
         if tot_images:
@@ -371,19 +371,19 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
           caveat = 'last updated earlier than ' + str(before) + ' days ago '
         if since:
           caveat = 'last updated more recently than ' + str(since) + ' days ago '
-        completed_message += 'with ' + str(remaining) + ' other items ' + caveat + 'remaining to be read.\033[0;m'
+        completed_message += 'with ' + str(remaining) + ' other items ' + caveat + 'remaining to be read.'
         return completed_message
       # else if there's nothing tagged with the archive_tag
       else:
-        return '\033[0;36m  Nothing to be read!\033[0;m'
+        return '  \033[46;97mNothing to be read!\033[0;m'
     else:
       if attempts < 4:
         attempts += 1
         time.sleep(10)
-        print('\033[0;36m  Attempting to connect...\033[0;m')
+        print('  \033[46;97mAttempting to connect...\033[0;m')
         return run_lucky_dip(attempts)
       else:
-        msg = "\033[0;36m  Sorry, no connection after 4 attempts.\033[0;m"
+        msg = "  \033[46;97mSorry, no connection after 4 attempts.\033[0;m"
         return msg
 
   return run_lucky_dip(0)
@@ -459,12 +459,12 @@ Options:
 # -----------------
 
 def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, before, since):
-  print('\033[0;36m  Stashing items...\033[0;m')
+  print('  \033[46;97mStashing items...\033[0;m')
   # if ignore_faves is set to True, don't get favorite items
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
   if favorite:
     params['favorite'] = "0"
-    print('\033[0;36m  Skipping favorited items...\033[0;m')
+    print('  Skipping favorited items...')
 
   def run_stash(attempts):
     if connection_live() == True:
@@ -516,7 +516,7 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
         item_action = {"item_id": item, "action": "archive"}
         archive_actions.append(item_action)
 
-      print('\033[0;36m  Archiving ' + str(len(archive_actions)) + ' items...\033[0;m')
+      print('  \033[46;97mArchiving ' + str(len(archive_actions)) + ' items...\033[0;m')
 
         # archive items
       process_items(archive_actions, consumer_key, pocket_access_token)
@@ -528,10 +528,10 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
       if attempts < 4:
         attempts += 1
         time.sleep(10)
-        print('\033[0;36m  Attempting to connect...\033[0;m')
+        print('  \033[46;97mAttempting to connect...\033[0;m')
         return run_stash(attempts)
       else:
-        msg = "\033[0;31m  Sorry, no connection after 4 attempts.\033[0;m"
+        msg = "  \033[46;97mSorry, no connection after 4 attempts.\033[0;m"
         return msg
 
   return run_stash(0)
@@ -585,7 +585,7 @@ def dedupe(state, tag, consumer_key, pocket_access_token):
 
   # loop over each key (not the whole object) in item_list
   # 'item' here refers to each item's key, not the whole object/dictionary
-  print('  checking ' + str(len(item_list)) + ' items...')
+  print('  \033[46;97mchecking ' + str(len(item_list)) + ' items...\033[0;m')
   for item in item_list:
     # conveniently the key Pocket uses is the item_id!
     item_id = item
@@ -619,7 +619,7 @@ def dedupe(state, tag, consumer_key, pocket_access_token):
     
     # if the length of the list is more than 1, then by definition there must be a duplicate
     if len(summary[item]) > 1:
-      print('  \033[0;36m' + item + '\033[0;m occurs ' + str(len(summary[item])) + ' times')
+      print('  \033[46;97m' + item + '\033[0;m occurs ' + str(len(summary[item])) + ' times')
       # keep only the most recently added item by slicing the list to make a new list of everything except the last one (which will be the *first* one that was found)
       duplicates = summary[item][:-1]
       # add each duplicate in the duplicates list for this url to the items_to_delete list
