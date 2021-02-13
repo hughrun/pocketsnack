@@ -29,12 +29,18 @@ import requests
 from datetime import datetime, time, timedelta
 import fileinput
 import json
+import os
 import random
 import re
 import socket
+import subprocess
+import sys
 import time
 import urllib
 import webbrowser
+
+# global for config
+config_file = os.path.expanduser('~/.pocketsnack_conf.yml')
 
 # ----------------
 # Create app
@@ -121,6 +127,54 @@ def process_items(actions, consumer_key, pocket_access_token):
     time.sleep(2) # don't fire off requests too quickly
 
 # ----------------
+# Configuration
+# ----------------
+
+def config():
+
+  try:
+    with open(config_file, 'x') as new_config:
+      new_config.write('pocket_consumer_key: YOUR_KEY_HERE\n')
+      new_config.write('items_per_cycle: 10\n')
+      new_config.write('archive_tag: tbr\n')
+      new_config.write('ignore_tags: \n')
+      new_config.write('  - ignore\n')
+      new_config.write('ignore_faves: true\n')
+      new_config.write('replace_all_tags: false\n')
+      new_config.write('retain_tags:\n')
+      new_config.write('  - glam blog club\n')
+      new_config.write('  - empocketer\n')
+      new_config.write('  - important dog stories\n')
+      new_config.write('longreads_wordcount: 3000\n')
+      new_config.write('num_videos: null\n')
+      new_config.write('num_images: null\n')
+      new_config.write('num_longreads: 2\n')
+      new_config.write('pocket_access_token: null')
+      new_config.close()
+
+      if sys.platform == 'win32' or sys.platform == 'cygwin':
+        win_path = os.path.normpath(config_file)
+        os.startfile(win_path) # windows path
+      if sys.platform == 'darwin':
+        subprocess.call(["open", config_file])
+      else:
+        subprocess.call(["xdg-open", config_file])
+      
+      return '  Config file created. Use \033[46;97mpocketsnack --auth\033[0;m to complete your setup.'
+  
+  except Exception:
+
+    if sys.platform == 'win32' or sys.platform == 'cygwin':
+      win_path = os.path.normpath(config_file)
+      os.startfile(win_path) # windows path
+    if sys.platform == 'darwin':
+      subprocess.call(["open", config_file])
+    else:
+      subprocess.call(["xdg-open", config_file])
+    
+    return 'Config file opened for editing.'
+
+# ----------------
 # Authorise
 # ----------------
 
@@ -158,12 +212,12 @@ def authorise(consumer_key): # With an 's'. Deal with it.
     # Assign the access token to a parameter called access_token
     access_token = res['access_token']
     # replace the pocket_access_token line rather than just adding an extra at the end
-    settings_file = fileinput.FileInput("settings/settings.yaml", inplace=True)
+    settings_file = fileinput.FileInput(config_file, inplace=True)
     repl = "pocket_access_token: " + access_token
     for line in settings_file:
       line = re.sub('(pocket_access_token)+.*', repl, line)
       print(line.rstrip())
-    return '\033[0;36m  Token added to settings.py - you are ready to use pocketsnack!\033[0;m 🎉'
+    return '\033[0;36m  Token added to config file - you are ready to use pocketsnack!\033[0;m 🎉'
 
 # ------------------------------
 # Read info about Pocket account
