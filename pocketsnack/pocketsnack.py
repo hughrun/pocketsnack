@@ -23,85 +23,23 @@
 # ----------------
 
 from argparse import ArgumentParser
+import yaml
 
 # bundled with Python
 import os
+import pkg_resources
 import subprocess
 
 # local modules
-from lib import toolkit as pt
-import yaml
-configyaml = open('settings/settings.yaml', 'r')
-for S in yaml.safe_load_all(configyaml):
+from pocketsnack import toolkit as pt
 
   # ----------------
-  # Settings
+  # What happens with each command?
   # ----------------
 
-  # assign short variable names from the settings file
-  access_token = S['pocket_access_token']
-  consumer_key = S['pocket_consumer_key']
-  archive_tag = S['archive_tag']
-  ignore_tags = set(S['ignore_tags'])
-  retain_tags = set(S['retain_tags'])
+def main():
 
-  # ----------------
-  # argparser arguments
-  # ----------------
-
-  parser = ArgumentParser(description='\033[1;36mpocketsnack: KonMari your Pocket tsundoku from the command line.\033[1;m')
-  admin = parser.add_argument_group('admin commands')
-  actions = parser.add_argument_group('action commands')
-  mex = parser.add_mutually_exclusive_group()
-  timers = parser.add_mutually_exclusive_group()
-
-  mex.add_argument(
-      "-a", "--archive", action="store_true", help="get information on TBR items in archive (with -i) or purge tags in archive (with -p)"
-  )
-  mex.add_argument(
-      "-b", "--all", action="store_true", help="purge all tags in both list and archive (with -p)"
-  )
-  actions.add_argument(
-      "-d", "--lucky_dip", action="store_true", help="move random items tagged 'tbr' from archive to list, depending on settings"
-  )
-  actions.add_argument(
-      "--dedupe", action="store_true", help="de-duplicate list (-l), archive (-a), tbr items (--tbr) or all (-b)- defaults to list"
-  )
-  actions.add_argument(
-      "-i", "--info", action="store_true", help="get information on items in list or TBR items in archive"
-  )
-  mex.add_argument(
-      "-l", "--list", action="store_true", help="get information on items in list (with -i) or purge tags in list (with -p)"
-  )
-  timers.add_argument(
-      "-n", "--since", type=int, help="only act on items where last activity is newer than a given number of days. Use with any action command"
-  )
-  timers.add_argument(
-      "-o", "--before", type=int, help="only act on items where last activity is older than a given number of days. Use with any action command"
-  )
-  actions.add_argument(
-      "-p", "--purge", action="store_true", help="remove all tags from list, archive, or both, depending on the second argument provided and excepting tags listed in 'retain_tags' in settings"
-  )
-  actions.add_argument(
-      "-s", "--stash", action="store_true", help="add 'tbr' tag to all items in user list and archive them, with exceptions as per settings"
-  )
-  admin.add_argument(
-      "-t", "--test", action="store_true", help="test whether API call returns data"
-  )
-  mex.add_argument(
-      "--tbr", action="store_true", help="used in conjuction with --dedupe to dedupe only items in the tbr archive."
-  )
-  admin.add_argument(
-      "-u", "--authorise", action="store_true", help="authorise app to connect to a Pocket account"
-  )
-
-  options = parser.parse_args()
-
-  # ----------------
-  # What happens with each combination?
-  # ----------------
-
-  if __name__ == '__main__':
+  try:
 
     # Find all args that have a value other than False
     # This helps with error messages for optional args 
@@ -112,7 +50,11 @@ for S in yaml.safe_load_all(configyaml):
       if vars(options)[x]:
         true_vars.append(x)
 
-    if options.authorise:
+    if options.config:
+      conf = pt.config()
+      print(conf)
+
+    elif options.authorise:
       # Run authorise once first to retrieve a pocket_access_token
       auth = pt.authorise(consumer_key)
       print(auth)
@@ -127,7 +69,7 @@ for S in yaml.safe_load_all(configyaml):
       
       location = tag if tag else state if state != 'unread' else 'list'
       print('  \033[46;97mChecking for duplicates in ' + location + '\033[0;m')
-      dd = pt.dedupe(state, tag, consumer_key, access_token)
+      pt.dedupe(state, tag, consumer_key, access_token)
 
     elif options.lucky_dip:
       print('  \033[46;97mRunning lucky dip...\033[0;m')
@@ -256,9 +198,106 @@ for S in yaml.safe_load_all(configyaml):
     elif options.test:
       result = pt.test(consumer_key, access_token)
       print(result)
+    
+    elif options.version:
+      # version number from package info
+      vnum = pkg_resources.require("pocketsnack")[0].version
+      print(vnum)
 
     elif set(true_vars).intersection(orphans):
       print('\n   That command cannot be used by itself. Check \033[46;97mpocketsnack --help\033[0;m for more information\n')
 
     else:
       print('  \033[46;97mpocketsnack\033[0;m requires commands and/or flags to do anything useful. Try \033[46;97mpocketsnack -h\033[0;m for more information')
+
+  except NameError:
+    # this happens when there is no config file
+    # since we already provide an error message below
+    # we do nothing here
+    pass
+
+# -----------------------------------
+# Parse commands (the action is here)
+# -----------------------------------
+try:
+  config_file = os.path.expanduser('~/.pocketsnack_conf.yml')
+  configyaml = open(config_file, 'r')
+  for S in yaml.safe_load_all(configyaml):
+
+    # ----------------
+    # Settings
+    # ----------------
+
+    # assign short variable names from the config file
+    access_token = S['pocket_access_token']
+    consumer_key = S['pocket_consumer_key']
+    archive_tag = S['archive_tag']
+    ignore_tags = set(S['ignore_tags'])
+    retain_tags = set(S['retain_tags'])
+
+    # ----------------
+    # argparser arguments
+    # ----------------
+
+    parser = ArgumentParser(description='\033[1;36mpocketsnack: KonMari your Pocket tsundoku from the command line.\033[1;m')
+    admin = parser.add_argument_group('admin commands')
+    actions = parser.add_argument_group('action commands')
+    mex = parser.add_mutually_exclusive_group()
+    timers = parser.add_mutually_exclusive_group()
+
+    mex.add_argument(
+        "-a", "--archive", action="store_true", help="get information on TBR items in archive (with -i) or purge tags in archive (with -p)"
+    )
+    mex.add_argument(
+        "-b", "--all", action="store_true", help="purge all tags in both list and archive (with -p)"
+    )
+    actions.add_argument(
+        "-c", "--config", action="store_true", help="create or edit your config file stored at ~/.pocketsnack_conf.yml"
+    )
+    actions.add_argument(
+        "-d", "--lucky_dip", action="store_true", help="move random items tagged 'tbr' from archive to list, depending on config"
+    )
+    actions.add_argument(
+        "--dedupe", action="store_true", help="de-duplicate list (-l), archive (-a), tbr items (--tbr) or all (-b)- defaults to list"
+    )
+    actions.add_argument(
+        "-i", "--info", action="store_true", help="get information on items in list or TBR items in archive"
+    )
+    mex.add_argument(
+        "-l", "--list", action="store_true", help="get information on items in list (with -i) or purge tags in list (with -p)"
+    )
+    timers.add_argument(
+        "-n", "--since", type=int, help="only act on items where last activity is newer than a given number of days. Use with any action command"
+    )
+    timers.add_argument(
+        "-o", "--before", type=int, help="only act on items where last activity is older than a given number of days. Use with any action command"
+    )
+    actions.add_argument(
+        "-p", "--purge", action="store_true", help="remove all tags from list, archive, or both, depending on the second argument provided and excepting tags listed in 'retain_tags' in config"
+    )
+    actions.add_argument(
+        "-s", "--stash", action="store_true", help="add 'tbr' tag to all items in user list and archive them, with exceptions as per config"
+    )
+    admin.add_argument(
+        "-t", "--test", action="store_true", help="test whether API call returns data"
+    )
+    mex.add_argument(
+        "--tbr", action="store_true", help="used in conjuction with --dedupe to dedupe only items in the tbr archive"
+    )
+    admin.add_argument(
+        "-u", "--authorise", action="store_true", help="authorise app to connect to a Pocket account"
+    )
+    admin.add_argument(
+        "-v", "--version", action="store_true", help="print the current version number to screen"
+    )
+
+    options = parser.parse_args()
+
+  if __name__ == '__main__':
+
+    main()
+
+except FileNotFoundError:
+  print('  \033[46;97mpocketsnack\033[0;m needs a config file!')
+  conf = pt.config()
+  print(conf)

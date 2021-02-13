@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "pocketsnack"
+version = "3.1.0a"
+description = "KonMari your Pocket tsundoku from the command line"
+authors = ["Hugh Rundle <hugh@hughrundle.net>"]
+license = "GPL-3.0-or-later"
+readme = "pypi.md"
+homepage = "https://github.com/hughrun/pocketsnack"
+repository = "https://github.com/hughrun/pocketsnack"
+keywords = ["pocket", "api"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+    "Topic :: Utilities"
+]
+include = [
+    "LICENSE"
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+requests = "^2.25.1"
+argparse = "^1.4.0"
+pyyaml = "^5.4.1"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+pocketsnack = 'pocketsnack.pocketsnack:main'
+
+[build-system]
+requires = ["poetry-core>=1.0.0a5"]
+build-backend = "poetry.core.masonry.api"

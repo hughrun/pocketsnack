@@ -2,36 +2,31 @@
 
 `pocketsnack` is a command line application offering various commands to make your [Pocket](https://getpocket.com) account more manageable. You can de-duplicate your list, purge unwanted tags, and hide your enormous 'to be read' list in a special archive so that looking at your list doesn't become paralysing. 
 
-This is the version 3 documentation. If you don't want to upgrade you can still read the [version 2 README](v2_README.md) or [version 1 README](v1_README.md).
+This is the version 3.x documentation. If you prefer to use an older version you can still read the [version 2 README](v2_README.md) or [version 1 README](v1_README.md).
 
-## A note on version 3
+## tl;dr
 
-Version 3 introduces a new YAML format for the settings file. This approach also allows for changes to the settings file without having to re-install `pocketsnack`, which was an unintended side effect of the previous approach of simply importing the file. Additional documentation on the settings file can be found below.
+1. make sure you have installed Python version 3.x (preferably 3.7 or higher)
+2. `pip install pocketsnack` (you may need to use `pip3` instead)
+3. `pocketsnack --config`
+4. Add your Pocket API consumer key to the config file
+5. `pocketsnack --authorise`
+6. You are now ready to enjoy using pocketsnack from any directory
 
 ## Getting started
 
-1. make sure you have installed Python version 3.x (preferably 3.7 or higher)
-2. download `pocketsnack` using git or the download link in [releases](releases)
-3. move into the top `pocketsnack` directory (i.e. `cd pocketsnack`)
-4. `pip install .` or if pip points to Python2, `pip3 install .`
-5. Add Pocket consumer key to `settings/settings.yaml`
-6. `pocketsnack --authorise`
-7. You are now ready to enjoy using pocketsnack from any directory
+### Creating a Pocket consumer key for your app
 
-### Installing Python 3
+1. Log in to Pocket in a web browser
+2. Go to [`https://getpocket.com/developer`](https://getpocket.com/developer) and click 'CREATE NEW APP'
+3. Complete the form: you will need all permissions, and the platform should be _Desktop (other)_ or _Mac_.
+4. Your new app will show a **consumer key**, which you need to paste into the first line in your configuration file.
 
-You will need Python 3.x installed. On MacOS the easiest thing to do is to [install Python 3 using Homebrew](https://docs.brew.sh/Homebrew-and-Python): `brew install python`.
+## Creating a configuration file
 
-### Settings
+Before you can use `pocketsnack` you need to create a configuration file. If you run any command (including simply `pocketsnack` without an argument) when your configuration file doesn't exist, a new file will be created and will open in your default application for editing `yaml` files. You *must* copy in the consumer key referred to above, and *may* adjust any other settings. 
 
-You will need to copy `settings/settings-example.yaml` to a new file - `settings/settings.yaml` before you start. You can do this however you like, but from the command line you could use:
-```shell
-cp settings/settings-example.py settings/settings.yaml
-```
-
-Then edit it with a text editor like `nano`, Atom or VS Code, but any text editor will do the job - you could even use TextEdit or Notepad.
-
-You can adjust most settings, but the defaults in `settings-example.yaml` should be sensible for most users.
+You can adjust most settings, but the defaults should be sensible for most users if you just want to get started.
 
 | setting              | type    | description                           |  
 | :------------------- | :---:   | :------------------------------------ |  
@@ -48,12 +43,7 @@ You can adjust most settings, but the defaults in `settings-example.yaml` should
 | num_longreads        | integer | how many long reads (if there are long reads in your list) should be included in each `--lucky_dip`. This is a subset of `item_per_cycle`, not in addition to the total. The definition of a long read is determined by `longreads_wordcount`|
 | pocket_access_token  | string  | access token required to interact with the Pocket API. This will be updated when you run `--authorise` and should not be edited manually.|
 
-### Creating a Pocket consumer key for your app
-
-1. Log in to Pocket in a web browser
-2. Go to [`https://getpocket.com/developer`](https://getpocket.com/developer) and click 'CREATE NEW APP'
-3. Complete the form: you will need all permissions, and the platform should be _Desktop (other)_
-4. Your new app will show a **consumer key**, which you need to paste into the first line in `settings.yaml`
+Save and close when you're done. You can edit this file again at any time by running `pocketsnack --config`.
 
 ### Authorising your app with a Pocket access token
 
@@ -81,7 +71,15 @@ This command has an 's', not a 'z', and the short version is a 'u', not an 'a'.
 
 You need this to authorise your app. Everything else works exclusively on the command line, but _authorise_ needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, wait for you to confirm that you have completed the authorisation (by typing 'done') and then add the token to `settings.yaml`. You also need to run `--authorise` if you want to change the Pocket account you are using with `pocketsnack`.
 
+## -v, --version
+
+Prints the current version number to screen.
+
 ## action commands
+
+### -c, --config
+
+Create or edit your config file stored at `~/.pocketsnack_conf.yml`.
 
 ### --dedupe
 
@@ -90,6 +88,10 @@ Removes duplicates from your List, TBR archive, full Archive, or everything, dep
 ### -d, --lucky_dip
 
 Returns items with the archive tag from the archive to the list, and removes the archive tag. The number of items returned is determined by `items_per_cycle` in `settings.yaml`. Note that if `num_videos` and `num_images` add up to more than `items_per_cycle`, then `--lucky_dip` will only return the total specified in `items_per_cycle`. Videos take precedence.
+
+### -i, --info LOCATION
+
+Get information on items in a list (if LOCATION is `-l`) or TBR items in your archive (if LOCATION is `-a`).
 
 ### -p, --purge
 
@@ -141,6 +143,10 @@ The Pocket API does not store a value for the date an items was first added. The
 
 ## examples
 
+Find out how many `TBR` items are in the archive:
+
+`pocketsnack --info -a`
+
 Stash only items updated in the last 2 days:  
 
 `pocketsnack --stash -n 2`
@@ -160,6 +166,10 @@ Run lucky_dip:
 Run lucky_dip but only choose from items last updated longer ago than one week:
 
 `pocketsnack -d -o 7`
+
+## A note on version 3
+
+Version 3.x introduces a new YAML format for the settings file. This approach also allows for changes to the settings file without having to re-install `pocketsnack`, which was an unintended side effect of the previous approach.
 
 ## Uninstalling or moving v1 script to a new directory
 
