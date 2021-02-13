@@ -299,5 +299,9 @@ try:
 
 except FileNotFoundError:
   print('  \033[46;97mpocketsnack\033[0;m needs a config file!')
-  conf = pt.config()
-  print(conf)
+  user_input = input('  Do you want to create one now using your default text editor (y/n)?')
+  if user_input in ["y", "yes", "Y", "Yes", "YES"]:
+    conf = pt.config()
+    print(conf)
+  else:
+    print('  Some other time then.')
