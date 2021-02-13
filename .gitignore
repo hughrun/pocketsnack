@@ -1,4 +1,4 @@
 logo/
-settings.yaml
-dev_settings.yaml
+settings/
 pypi.md
+dist/
