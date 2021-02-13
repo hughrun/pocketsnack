@@ -22,7 +22,7 @@ This is the version 3.x documentation. If you prefer to use an older version you
 3. Complete the form: you will need all permissions, and the platform should be _Desktop (other)_ or _Mac_.
 4. Your new app will show a **consumer key**, which you need to paste into the first line in your configuration file.
 
-## Creating a configuration file
+### Creating a configuration file
 
 Before you can use `pocketsnack` you need to create a configuration file. If you run any command (including simply `pocketsnack` without an argument) when your configuration file doesn't exist, a new file will be created and will open in your default application for editing `yaml` files. You *must* copy in the consumer key referred to above, and *may* adjust any other settings. 
 
@@ -141,7 +141,7 @@ Restrict the current _action command_ to only items updated less recently than _
 
 The Pocket API does not store a value for the date an items was first added. The only value we can get is _since_, which is a timestamp updated every time there is an update made to an item via or equivalent to any `add` or `modify` [API action](https://getpocket.com/developer/docs/overview). This could be when it is added to the List, move to the archive, moved out of the archive back into the List, or has changes made to tags (even if that tag update results in no actual change - i.e. if `--purge` has been run against the item, regardless of whether it had any tags to begin with).
 
-## examples
+## Examples
 
 Find out how many `TBR` items are in the archive:
 
