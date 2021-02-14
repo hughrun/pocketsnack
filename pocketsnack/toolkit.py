@@ -612,7 +612,6 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
 
   # Retrieving items
   # ----------------
-  # retrieve all 'unread' items (i.e. not archived)
   # we use the Retrieve API call = https://getpocket.com/developer/docs/v3/retrieve
   # The endpoint for retrieving is 'get': https://getpocket.com/v3/get
   # detailType should be 'simple' because we don't need any information except for the item_id and the resolved_url
@@ -626,9 +625,9 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
   if tag:
     parameters['tag'] = tag  # if tag exists, add it to parameters
 
-  unread = get(parameters)
+  retrieved = get(parameters)
   # our items will be under the JSON object's "list" key
-  item_list = unread.json()['list']
+  item_list = retrieved.json()['list']
   
   # make a new dictionary called 'summary'
   # we will use this to look for duplicates
@@ -679,7 +678,6 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
       # keep only the most recently added item by slicing the list to make a new list of everything except the last one (which will be the *first* one that was found)
       duplicates = summary[item][:-1]
 
-      # TODO: optionally fave the dupe we're keeping
       if fave_dupes:
         # get last item (which we are keeping) and add to faving list
         items_to_fave.append(summary[item][-1])
@@ -704,12 +702,6 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
   for item_id in items_to_fave:
     faves.append({"action":"favorite", "item_id": item_id})
 
-  # Turn the lists and component dictionaries into JSON strings
-  actions_string = json.dumps(actions)
-  faves_string = json.dumps(faves)
-  # Now URL encode it using urllib
-  actions_escaped = urllib.parse.quote(actions_string)
-  faves_escaped = urllib.parse.quote(faves_string)
   # Double check you really want to delete them
   if len(actions) > 0:
     if fave_dupes:
@@ -721,26 +713,42 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
     if check == 'delete':
 
       if fave_dupes:
-        # fave remaining
-        faved = send(faves_escaped, consumer_key, pocket_access_token)
-        if str(faved) == '<Response [200]>':
-          print('  \033[46;97mRemaining duplicates faved...\033[0;m')
-        else:
-          print('  \033[46;97mSomething went wrong favoriting your dupes 😟\033[0;m')
-          print(faved.data)
+        # chunk faving to avoid URL-too-long errors
+        fav_chunks = [faves[i:i+20] for i in range(0, len(faves), 20)]
 
-      # now POST to pocket and assign the response to a parameter at the same time.
-      deleted = send(actions_escaped, consumer_key, pocket_access_token)
-      # provide feedback on what happened
-      # 'deleted' is a raw http response (it should return '<Response [200]>') 
-      # so we need to turn it into a Python string before we can do a comparison
-      if str(deleted) == '<Response [200]>':
-        print('  \033[46;97m🚮 These duplicates have been deleted:\033[0;m')
-        for item in actions:
-          print('  \033[46;97m' + item['item_id'] + '\033[0;m')
-        # that's it!
-      else:
-        print('  \033[46;97mSomething went wrong 😟\033[0;m')
+        for i, chunk in enumerate(fav_chunks):
+
+          faves_string = json.dumps(chunk)
+          faves_escaped = urllib.parse.quote(faves_string) # URL encode it using urllib
+          faved = send(faves_escaped, consumer_key, pocket_access_token)
+
+          # provide feedback on what happened
+          # 'deleted' is a raw http response (it should return '<Response [200]>') 
+          # so we need to turn it into a Python string before we can do a comparison
+          if str(faved) == '<Response [200]>':
+            print('  \033[46;97mFavorited ' + str((i*20)+len(chunk)) + ' items...\033[0;m')
+          else:
+            print('  \033[46;97mSomething went wrong favoriting your dupes 😟\033[0;m')
+            print(faved.text)
+            break
+
+      # chunk deletions to avoid URL-too-long errors
+      del_chunks = [actions[i:i+20] for i in range(0, len(actions), 20)]
+
+      for i, chunk in enumerate(del_chunks):
+
+        actions_string = json.dumps(chunk)
+        actions_escaped = urllib.parse.quote(actions_string)
+        deleted = send(actions_escaped, consumer_key, pocket_access_token)
+
+        if str(deleted) == '<Response [200]>':
+          print('  \033[46;97mDeleted ' + str((i*20)+len(chunk)) + ' items...\033[0;m')
+        else:
+          print('  \033[46;97mSomething went wrong deleting duplicates 😟\033[0;m')
+          print(deleted.text)
+
+      print('  \033[46;97m✅ de-duping completed\033[0;m')
+
     else:
       print('  \033[46;97m✋ deletion cancelled\033[0;m')
   else:
