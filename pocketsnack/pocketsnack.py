@@ -226,7 +226,8 @@ def main():
 # Parse commands (the action is here)
 # -----------------------------------
 try:
-  config_file = os.path.expanduser('~/.pocketsnack_conf.yml')
+  conf_file_path = os.path.join('~', '.pocketsnack_conf.yml')
+  config_file = os.path.expanduser(conf_file_path)
   configyaml = open(config_file, 'r')
   for S in yaml.safe_load_all(configyaml):
 

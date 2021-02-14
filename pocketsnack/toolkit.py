@@ -40,7 +40,8 @@ import urllib
 import webbrowser
 
 # global for config
-config_file = os.path.expanduser('~/.pocketsnack_conf.yml')
+conf_file_path = os.path.join('~', '.pocketsnack_conf.yml')
+config_file = os.path.expanduser(conf_file_path)
 
 # ----------------
 # Create app
@@ -746,6 +747,7 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
         else:
           print('  \033[46;97mSomething went wrong deleting duplicates 😟\033[0;m')
           print(deleted.text)
+          break
 
       print('  \033[46;97m✅ de-duping completed\033[0;m')
 
