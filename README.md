@@ -1,8 +1,14 @@
 # KonMari your Pocket tsundoku from the command line
 
-`pocketsnack` is a command line application offering various commands to make your [Pocket](https://getpocket.com) account more manageable. You can de-duplicate your list, purge unwanted tags, and hide your enormous 'to be read' list in a special archive so that looking at your list doesn't become paralysing. 
+`pocketsnack` is a command line application offering various commands to make your [Pocket](https://getpocket.com) account more manageable. You can de-duplicate your list, purge unwanted tags, and hide your enormous 'to be read' list in a special archive so that looking at it doesn't become paralysing. It runs on MacOS, should run on Linux and BSD. Until I understand how to get `os` to create a filepath Windows can interpret, it will not run on Windows.
 
 This is the version 3.x documentation. If you prefer to use an older version you can still read the [version 2 README](v2_README.md) or [version 1 README](v1_README.md).
+
+## Requirements
+
+* Python 3.6 or higher
+* `xdg-utils` (for Linux & BSD)
+* A web browser to obtain a Pocket token
 
 ## tl;dr
 
@@ -48,9 +54,9 @@ Save and close when you're done. You can edit this file again at any time by run
 
 ### Authorising your app with a Pocket access token
 
-Pocket uses OAuth to confirm that your app has permission from your user account to do stuff in your account. This means you need to authorise the app before you can do anything else. Once you have copied your app consumer key into settings.yaml, run `pocketsnack --authorise` to get your token.
+Pocket uses OAuth to confirm that your app has permission from your user account to do things in your account. This means you need to authorise the app before you can do anything else. Once you have copied your app consumer key into the config file, run `pocketsnack --authorise` to get your token.
 
-You should now have a line at the bottom of settings.yaml saying something like `pocket_access_token: 'aa11bb-zz9900xx'`
+You should now have a line a value for `pocket_access_token:` that looks something like `'aa11bb-zz9900xx'`
 
 ## Usage
 
@@ -70,7 +76,7 @@ Outputs the full JSON from the first article returned by a call to the API. Norm
 
 This command has an 's', not a 'z', and the short version is a 'u', not an 'a'.
 
-You need this to authorise your app. Everything else works exclusively on the command line, but _authorise_ needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, wait for you to confirm that you have completed the authorisation (by typing 'done') and then add the token to `settings.yaml`. You also need to run `--authorise` if you want to change the Pocket account you are using with `pocketsnack`.
+You need this to authorise your app. Everything else works exclusively on the command line, but _authorise_ needs to open a browser to complete the authorisation process, so you need to run this on a machine with a web browser. It will authorise your app with your user, wait for you to confirm that you have completed the authorisation (by typing 'done') and then add the token to your config file. You also need to run `--authorise` if you want to change the Pocket account you are using with `pocketsnack`.
 
 ## -v, --version
 
@@ -80,7 +86,7 @@ Prints the current version number to screen.
 
 ### -c, --config
 
-Create or edit your config file stored at `~/.pocketsnack_conf.yml`.
+Create or edit your config file which is stored at `~/.pocketsnack_conf.yml`.
 
 ### --dedupe
 
@@ -108,7 +114,7 @@ Adds the archive tag to everything in your list, and then archives them. Dependi
 
 ### -a, --archive
 
-Used in combination with `--info`, this tells you how many items are in your archive and how many of them are 'long reads'. You can set the wordcount defining a long read in `settings.yaml`. 
+Used in combination with `--info`, this tells you how many items are in your archive and how many of them are 'long reads'. You can set the wordcount defining a long read in your config. 
 
 Used with `--purge`, it purges tags on items in the archive.
 
@@ -140,7 +146,7 @@ Restrict the current _action command_ to only items updated less recently than _
 
 ### What does 'updated' mean?
 
-The Pocket API does not store a value for the date an items was first added. The only value we can get is _since_, which is a timestamp updated every time there is an update made to an item via or equivalent to any `add` or `modify` [API action](https://getpocket.com/developer/docs/overview). This could be when it is added to the List, move to the archive, moved out of the archive back into the List, or has changes made to tags (even if that tag update results in no actual change - i.e. if `--purge` has been run against the item, regardless of whether it had any tags to begin with).
+The Pocket API does not store a value for the date an items was first added. The only value we can get is _since_, which is a timestamp updated every time there is a change made to an item via or equivalent to any `add` or `modify` [API action](https://getpocket.com/developer/docs/overview). This could be when it is added to the List, move to the archive, moved out of the archive back into the List, or has changes made to tags (even if that tag update results in no actual change - i.e. if `--purge` has been run against the item, regardless of whether it had any tags to begin with).
 
 ## Examples
 
@@ -176,13 +182,13 @@ Version 3.x introduces a new YAML format for the settings file. This approach al
 
 ### If you installed with pip
 
-Just run `pip uninstall pocketsnack` or `pip3 uninstall pocketsnack`.
+Run `pip uninstall pocketsnack` or `pip3 uninstall pocketsnack`.
 
 ### If you installed using the legacy version 1 install.sh script
 
-1. Delete the executable link: `rm /usr/local/bin/pocketsnack`  
+1. Delete the executable link, e.g. `rm /usr/local/bin/pocketsnack`  
 
-If you don't do this when re-installing in a different directory, running `pocketsnack` will fail because it will still be pointing at the old directory.
+   If you don't do this when re-installing in a different directory, running `pocketsnack` will fail because it will still be pointing at the old directory.
 2. Now you can safely delete the pocket-snack directory: `rm -r pocketsnack`
 
 ## Bugs and suggestions
