@@ -50,6 +50,9 @@ def main():
       if vars(options)[x]:
         true_vars.append(x)
 
+    if S['pocket_consumer_key'] == 'YOUR_KEY_HERE':
+      print('  ⚠️ You have not set a pocket_consumer_key in your configuration file. Run \033[46;97mpocketsnack --config\033[0;m or check the README for help.')
+
     if options.config:
       conf = pt.config()
       print(conf)
@@ -69,7 +72,7 @@ def main():
       
       location = tag if tag else state if state != 'unread' else 'list'
       print('  \033[46;97mChecking for duplicates in ' + location + '\033[0;m')
-      pt.dedupe(state, tag, consumer_key, access_token)
+      pt.dedupe(state, tag, S['fave_dupes'], consumer_key, access_token)
 
     elif options.lucky_dip:
       print('  \033[46;97mRunning lucky dip...\033[0;m')
@@ -216,6 +219,9 @@ def main():
     # we do nothing here
     pass
 
+  except ValueError:
+    print("  😳 Whoops, look's like there is a problem with your config file. Try \033[46;97mpocketsnack --config\033[0;m to fix this")
+
 # -----------------------------------
 # Parse commands (the action is here)
 # -----------------------------------
@@ -258,7 +264,7 @@ try:
         "-d", "--lucky_dip", action="store_true", help="move random items tagged 'tbr' from archive to list, depending on config"
     )
     actions.add_argument(
-        "--dedupe", action="store_true", help="de-duplicate list (-l), archive (-a), tbr items (--tbr) or all (-b)- defaults to list"
+        "--dedupe", action="store_true", help="de-duplicate list (-l), archive (-a), tbr items (--tbr) or all (-b). Defaults to list"
     )
     actions.add_argument(
         "-i", "--info", action="store_true", help="get information on items in list or TBR items in archive"

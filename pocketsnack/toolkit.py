@@ -140,6 +140,7 @@ def config():
       new_config.write('ignore_tags: \n')
       new_config.write('  - ignore\n')
       new_config.write('ignore_faves: true\n')
+      new_config.write('fave_dupes: true\n')
       new_config.write('replace_all_tags: false\n')
       new_config.write('retain_tags:\n')
       new_config.write('  - glam blog club\n')
@@ -172,7 +173,7 @@ def config():
     else:
       subprocess.call(["xdg-open", config_file])
     
-    return 'Config file opened for editing.'
+    return '  Config file opened for editing'
 
 # ----------------
 # Authorise
@@ -607,7 +608,7 @@ def test(consumer_key, pocket_access_token):
 # de-duplicate
 # -----------------
 
-def dedupe(state, tag, consumer_key, pocket_access_token):
+def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
 
   # Retrieving items
   # ----------------
@@ -635,6 +636,8 @@ def dedupe(state, tag, consumer_key, pocket_access_token):
 
   # and make a list called 'items_to_delete'
   items_to_delete = []
+  # the originals will be faved if the config file says to do that
+  items_to_fave = []
 
   # loop over each key (not the whole object) in item_list
   # 'item' here refers to each item's key, not the whole object/dictionary
@@ -675,6 +678,12 @@ def dedupe(state, tag, consumer_key, pocket_access_token):
       print('  \033[46;97m' + item + '\033[0;m occurs ' + str(len(summary[item])) + ' times')
       # keep only the most recently added item by slicing the list to make a new list of everything except the last one (which will be the *first* one that was found)
       duplicates = summary[item][:-1]
+
+      # TODO: optionally fave the dupe we're keeping
+      if fave_dupes:
+        # get last item (which we are keeping) and add to faving list
+        items_to_fave.append(summary[item][-1])
+
       # add each duplicate in the duplicates list for this url to the items_to_delete list
       for item in duplicates:
         items_to_delete.append(item)
@@ -687,21 +696,39 @@ def dedupe(state, tag, consumer_key, pocket_access_token):
 
   # With our list of duplicate item ids, we create one final list of a bunch of JSON objects
   actions = []
-
+  faves = []
   # for each item to be deleted, append a dictionary to the actions list
   for item_id in items_to_delete:
     actions.append({"action":"delete", "item_id": item_id})
 
+  for item_id in items_to_fave:
+    faves.append({"action":"favorite", "item_id": item_id})
+
+  # Turn the lists and component dictionaries into JSON strings
+  actions_string = json.dumps(actions)
+  faves_string = json.dumps(faves)
+  # Now URL encode it using urllib
+  actions_escaped = urllib.parse.quote(actions_string)
+  faves_escaped = urllib.parse.quote(faves_string)
   # Double check you really want to delete them
   if len(actions) > 0:
-    print('  \033[107;95mAbout to delete ' + str(len(actions)) + ' duplicate items.\033[0;m')
+    if fave_dupes:
+      print('  \033[107;95mAbout to delete ' + str(len(actions)) + ' duplicate items and favorite the originals.\033[0;m')
+    else:
+      print('  \033[107;95mAbout to delete ' + str(len(actions)) + ' duplicate items.\033[0;m')
     print('  \033[107;95mDelete these items? Type "delete" to confirm.\033[0;m')
     check = input('>>')
     if check == 'delete':
-      # first turn the list and its component dictionaries into a JSON string
-      actions_string = json.dumps(actions)
-      # now URL encode it using urllib
-      actions_escaped = urllib.parse.quote(actions_string)
+
+      if fave_dupes:
+        # fave remaining
+        faved = send(faves_escaped, consumer_key, pocket_access_token)
+        if str(faved) == '<Response [200]>':
+          print('  \033[46;97mRemaining duplicates faved...\033[0;m')
+        else:
+          print('  \033[46;97mSomething went wrong favoriting your dupes 😟\033[0;m')
+          print(faved.data)
+
       # now POST to pocket and assign the response to a parameter at the same time.
       deleted = send(actions_escaped, consumer_key, pocket_access_token)
       # provide feedback on what happened

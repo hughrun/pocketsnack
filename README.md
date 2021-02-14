@@ -6,7 +6,7 @@ This is the version 3.x documentation. If you prefer to use an older version you
 
 ## tl;dr
 
-1. make sure you have installed Python version 3.x (preferably 3.7 or higher)
+1. make sure you have installed Python version 3.6.0 or higher.
 2. `pip install pocketsnack` (you may need to use `pip3` instead)
 3. `pocketsnack --config`
 4. Add your Pocket API consumer key to the config file
@@ -35,6 +35,7 @@ You can adjust most settings, but the defaults should be sensible for most users
 | archive_tag          | string  | the tag to use to identify items in your 'to be read' archive|
 | ignore_tags          | list    | a list of tag names - items with any of these tags will be ignored by `--stash` and remain in your Pocket List|
 | ignore_faves         | boolean | if set to `true` favorited items will be ignored by `--stash` and remain in your Pocket List| 
+| fave_dupes         | boolean | if set to `true` the remaining (original) item will be favorited when duplicates are removed with `--dedupe`| 
 | replace_all_tags     | boolean | if set to `true` all tags will be removed by `--stash` when adding the `archive_tag`, except anything in `retain_tags`|
 | retain_tags          | list    | a list of tag names - these tags will not be removed by `--purge`, nor by `--stash` if `replace_all_tags` is set to `true`|
 | longreads_wordcount  | integer | determines how long a 'longread' is. |
