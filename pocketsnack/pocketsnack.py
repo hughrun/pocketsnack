@@ -255,7 +255,7 @@ try:
         "-a", "--archive", action="store_true", help="get information on TBR items in archive (with -i) or purge tags in archive (with -p)"
     )
     mex.add_argument(
-        "-b", "--all", action="store_true", help="purge all tags in both list and archive (with -p)"
+        "-b", "--all", action="store_true", help="purge all tags in both list and archive (with -p) or dedupe both list and archive (with --dedupe)"
     )
     actions.add_argument(
         "-c", "--config", action="store_true", help="create or edit your config file stored at ~/.pocketsnack_conf.yml"
