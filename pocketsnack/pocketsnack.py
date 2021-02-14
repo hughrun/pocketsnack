@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # pocketsnack - KonMari your Pocket tsundoku from the command line
-# Copyright (C) 2018 - 2020 Hugh Rundle
+# Copyright (C) 2018 - 2021 Hugh Rundle
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# You can contact Hugh on email: hugh [at] hughrundle [dot] net
+# You can contact Hugh on email hugh [at] hughrundle [dot] net
+# or Mastodon at @hugh@ausglam.space
 
 # ----------------
 # Import libraries
@@ -32,6 +33,10 @@ import subprocess
 
 # local modules
 from pocketsnack import toolkit as pt
+
+# define config filepath for all platforms
+conf_file_path = os.path.join('~', '.pocketsnack_conf.yml')
+config_file = os.path.expanduser(conf_file_path)
 
   # ----------------
   # What happens with each command?
@@ -54,12 +59,12 @@ def main():
       print('  ⚠️ You have not set a pocket_consumer_key in your configuration file. Run \033[46;97mpocketsnack --config\033[0;m or check the README for help.')
 
     if options.config:
-      conf = pt.config()
+      conf = pt.config(config_file)
       print(conf)
 
     elif options.authorise:
       # Run authorise once first to retrieve a pocket_access_token
-      auth = pt.authorise(consumer_key)
+      auth = pt.authorise(config_file, consumer_key)
       print(auth)
 
     elif options.dedupe:
@@ -213,7 +218,7 @@ def main():
     else:
       print('  \033[46;97mpocketsnack\033[0;m requires commands and/or flags to do anything useful. Try \033[46;97mpocketsnack -h\033[0;m for more information')
 
-  except NameError:
+  except NameError, FileNotFoundError:
     # this happens when there is no config file
     # since we already provide an error message below
     # we do nothing here
@@ -226,8 +231,7 @@ def main():
 # Parse commands (the action is here)
 # -----------------------------------
 try:
-  conf_file_path = os.path.join('~', '.pocketsnack_conf.yml')
-  config_file = os.path.expanduser(conf_file_path)
+
   configyaml = open(config_file, 'r')
   for S in yaml.safe_load_all(configyaml):
 

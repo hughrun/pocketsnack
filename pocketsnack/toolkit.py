@@ -1,6 +1,5 @@
-# pocket-toolkit - a collection of functions to manage your Pocket account
-
-# Copyright (C) 2018 - 2020 Hugh Rundle
+# pocketsnack - KonMari your Pocket tsundoku from the command line
+# Copyright (C) 2018 - 2021 Hugh Rundle
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,9 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# You can contact Hugh on Mastodon at @hugh@ausglam.space
-# or Twitter at @hughrundle
-# or email hugh [at] hughrundle [dot] net
+# You can contact Hugh on email hugh [at] hughrundle [dot] net
+# or Mastodon at @hugh@ausglam.space
 
 # ----------------
 # Import libraries
@@ -38,10 +36,6 @@ import sys
 import time
 import urllib
 import webbrowser
-
-# global for config
-conf_file_path = os.path.join('~', '.pocketsnack_conf.yml')
-config_file = os.path.expanduser(conf_file_path)
 
 # ----------------
 # Create app
@@ -131,7 +125,7 @@ def process_items(actions, consumer_key, pocket_access_token):
 # Configuration
 # ----------------
 
-def config():
+def config(config_file):
 
   try:
     with open(config_file, 'x') as new_config:
@@ -180,7 +174,7 @@ def config():
 # Authorise
 # ----------------
 
-def authorise(consumer_key): # With an 's'. Deal with it.
+def authorise(config_file, consumer_key): # With an 's'. Deal with it.
   redirect_uri = 'https://hugh.run/success'
   paramsOne = {"consumer_key": consumer_key, "redirect_uri": redirect_uri}
   # set up step 1 request - this should return a 'code' aka 'request token'
