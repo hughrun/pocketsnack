@@ -22,6 +22,8 @@
 # ----------------
 
 import requests
+from rich.console import Console
+from rich.theme import Theme
 
 # bundled with Python
 from datetime import datetime, time, timedelta
@@ -36,6 +38,13 @@ import sys
 import time
 import urllib
 import webbrowser
+
+# set up rich
+custom_theme = Theme({
+    "highlight" : "color(255) on cyan",
+    "command": "red on white"
+})
+console = Console(theme=custom_theme)
 
 # ----------------
 # Create app
@@ -116,9 +125,9 @@ def process_items(actions, consumer_key, pocket_access_token):
     # post update to tags
     update = send(actions_escaped, consumer_key, pocket_access_token)
     if update.raise_for_status() == None:
-      print('\033[0;32mOk\033[0;m') # Print 'Ok' in green.
+      console.print('[color(255) on green] Ok [/color(255) on green]') # Print 'Ok' in green.
     else:
-      print('\031[0;41mOh dear, something went wrong.\033[0;m') # Print error in red
+      console.print('😨 [bold red on color(255)] Oh dear, something went wrong. [/bold red on color(255)]') # Print error in red
     time.sleep(2) # don't fire off requests too quickly
 
 # ----------------
@@ -151,19 +160,19 @@ def config(config_file):
       if sys.platform == 'win32' or sys.platform == 'cygwin':
         win_path = os.path.normpath(config_file)
         os.startfile(win_path) # windows path
-      if sys.platform == 'darwin':
+      elif sys.platform == 'darwin':
         subprocess.call(["open", config_file])
       else:
         subprocess.call(["xdg-open", config_file])
       
-      return '  Config file created. Use \033[46;97mpocketsnack --auth\033[0;m to complete your setup.'
+      return '  Config file created. Use [highlight] pocketsnack --auth [/highlight] to complete your setup.'
   
   except Exception:
 
     if sys.platform == 'win32' or sys.platform == 'cygwin':
       win_path = os.path.normpath(config_file)
       os.startfile(win_path) # windows path
-    if sys.platform == 'darwin':
+    elif sys.platform == 'darwin':
       subprocess.call(["open", config_file])
     else:
       subprocess.call(["xdg-open", config_file])
@@ -182,7 +191,7 @@ def authorise(config_file, consumer_key): # With an 's'. Deal with it.
   # get the JSON response and save the token to a param for the next step
   request_token = requestOne.json()['code']
   # print the request token to the console so you know it happened
-  print('\033[0;36m  Your request token (code) is \033[0;m' + request_token)
+  console.print('[highlight]  Your request token (code) is  [/highlight]' + request_token)
 
   # now you need to authorise the app in your Pocket account
   # build the url
@@ -193,7 +202,7 @@ def authorise(config_file, consumer_key): # With an 's'. Deal with it.
   # We're not writing a server app here so we use a little hack to check whether the user has finished authorising before we continue
   # Just wait for the user (you!) to indicate they have finished authorising the app
   # the '\n' prints a new line
-  print('\033[0;36m  Authorise your app in the browser tab that just opened.\033[0;m')
+  console.print('[highlight]  Authorise your app in the browser tab that just opened. [/highlight]')
   user_input = input('Type "done" when you have finished authorising the app in Pocket \n>>')
 
   if user_input == "done":
@@ -204,7 +213,7 @@ def authorise(config_file, consumer_key): # With an 's'. Deal with it.
     # get the JSON response as a Python dictionary and call it 'res'.
     res = requestTwo.json()
     # Finally we have the access token!
-    print('\033[0;36m  Access token for ' + res['username'] + ' is \033[0;m' + res['access_token'])
+    console.print('[highlight]  Access token for ' + res['username'] + ' is  [/highlight]' + res['access_token'])
     # Assign the access token to a parameter called access_token
     access_token = res['access_token']
     # replace the pocket_access_token line rather than just adding an extra at the end
@@ -212,8 +221,8 @@ def authorise(config_file, consumer_key): # With an 's'. Deal with it.
     repl = "pocket_access_token: " + access_token
     for line in settings_file:
       line = re.sub('(pocket_access_token)+.*', repl, line)
-      print(line.rstrip())
-    return '\033[0;36m  Token added to config file - you are ready to use pocketsnack!\033[0;m 🎉'
+      console.print(line.rstrip())
+    return '[highlight]  Token added to config file - you are ready to use pocketsnack! [/highlight] 🎉'
 
 # ------------------------------
 # Read info about Pocket account
@@ -405,34 +414,34 @@ def lucky_dip(consumer_key, pocket_access_token, archive_tag, items_per_cycle, n
         for v in chosen.values():
           tot_added += v
         remaining = available - tot_added
-        completed_message = '\033[46;97mSuccess!\033[0;m ' + str(tot_added) + ' items added to your reading list, including '
+        completed_message = '  Success! [highlight] ' + str(tot_added) + ' [/highlight] items added to your reading list, including [highlight] '
         if random_choice:
-          completed_message += str(chosen['random']) + ' random articles, '
+          completed_message += str(chosen['random']) + ' [/highlight] random articles, [highlight] '
         if tot_images:
-          completed_message += str(tot_images) + ' images, '
+          completed_message += str(tot_images) + ' [/highlight] images, [highlight] '
         if tot_videos:
-          completed_message += str(tot_videos) + ' videos, '
+          completed_message += str(tot_videos) + ' [/highlight] videos, [highlight] '
         if not random_choice:
-          completed_message += str(chosen['longreads']) + ' long reads and ' + str(chosen['shortreads']) + ' short reads, '
+          completed_message += str(chosen['longreads']) + ' [/highlight] long reads and [highlight] ' + str(chosen['shortreads']) + ' [/highlight] short reads, '
         # add this to the end regardless
         caveat = ''
         if before:
-          caveat = 'last updated earlier than ' + str(before) + ' days ago '
+          caveat = 'last updated earlier than [highlight] ' + str(before) + ' [/highlight] days ago '
         if since:
-          caveat = 'last updated more recently than ' + str(since) + ' days ago '
-        completed_message += 'with ' + str(remaining) + ' other items ' + caveat + 'remaining to be read.'
+          caveat = 'last updated more recently than [highlight] ' + str(since) + ' [/highlight] days ago '
+        completed_message += 'with [highlight] ' + str(remaining) + ' [/highlight] other items ' + caveat + 'remaining to be read.'
         return completed_message
       # else if there's nothing tagged with the archive_tag
       else:
-        return '  \033[46;97mNothing to be read!\033[0;m'
+        return '  [highlight] Nothing to be read! [/highlight]'
     else:
       if attempts < 4:
         attempts += 1
         time.sleep(10)
-        print('  \033[46;97mAttempting to connect...\033[0;m')
+        console.print('  [highlight] Attempting to connect... [/highlight]')
         return run_lucky_dip(attempts)
       else:
-        msg = "  \033[46;97mSorry, no connection after 4 attempts.\033[0;m"
+        msg = "  [highlight] Sorry, no connection after 4 attempts. [/highlight]"
         return msg
 
   return run_lucky_dip(0)
@@ -480,10 +489,10 @@ def purge_tags(state, retain_tags, archive_tag, consumer_key, pocket_access_toke
         actions.append(update)
       
       process_items(actions, consumer_key, pocket_access_token)
-      return '\033[1;36m  Undesirable elements have been purged.\033[1;m' 
+      return '  [highlight] Undesirable elements have been purged. [/highlight]' 
     
     else:
-      return '\033[0;36m  No items from which to purge tags.\033[0;m'
+      return '[highlight]  No items from which to purge tags. [/highlight]'
 
 """
 Stash
@@ -508,12 +517,12 @@ Options:
 # -----------------
 
 def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, retain_tags, favorite, ignore_tags, before, since):
-  print('  \033[46;97mStashing items...\033[0;m')
+  console.print('  [highlight] Stashing items... [/highlight]')
   # if ignore_faves is set to True, don't get favorite items
   params = {"consumer_key": consumer_key, "access_token": pocket_access_token, "detailType": "complete", "state": "unread"}
   if favorite:
     params['favorite'] = "0"
-    print('  Skipping favorited items...')
+    console.print('  Skipping favorited items...')
 
   def run_stash(attempts):
     if connection_live() == True:
@@ -565,22 +574,22 @@ def stash(consumer_key, pocket_access_token, archive_tag, replace_all_tags, reta
         item_action = {"item_id": item, "action": "archive"}
         archive_actions.append(item_action)
 
-      print('  \033[46;97mArchiving ' + str(len(archive_actions)) + ' items...\033[0;m')
+      console.print('  Archiving [highlight] ' + str(len(archive_actions)) + ' [/highlight] items...')
 
         # archive items
       process_items(archive_actions, consumer_key, pocket_access_token)
 
       # return a list of what was stashed and, if relevant, what wasn't
       skipped_items = len(item_list) - len(items_to_stash)
-      return '  ' + str(len(items_to_stash)) + ' items archived with "' + archive_tag + '" and ' + str(skipped_items) + ' items skipped due to retain tag.'
+      return '  [highlight] ' + str(len(items_to_stash)) + ' [/highlight] items archived with [command] "' + archive_tag + '" [/command] and [highlight] ' + str(skipped_items) + ' [/highlight] items skipped due to retain tag.'
     else:
       if attempts < 4:
         attempts += 1
         time.sleep(10)
-        print('  \033[46;97mAttempting to connect...\033[0;m')
+        console.print('  [highlight] Attempting to connect... [/highlight]')
         return run_stash(attempts)
       else:
-        msg = "  \033[46;97mSorry, no connection after 4 attempts.\033[0;m"
+        msg = "  [highlight] Sorry, no connection after 4 attempts. [/highlight]"
         return msg
 
   return run_stash(0)
@@ -635,7 +644,7 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
 
   # loop over each key (not the whole object) in item_list
   # 'item' here refers to each item's key, not the whole object/dictionary
-  print('  \033[46;97mchecking ' + str(len(item_list)) + ' items...\033[0;m')
+  console.print('  Checking [highlight] ' + str(len(item_list)) + ' [/highlight] items...')
   for item in item_list:
     # conveniently the key Pocket uses is the item_id!
     item_id = item
@@ -669,7 +678,7 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
     
     # if the length of the list is more than 1, then by definition there must be a duplicate
     if len(summary[item]) > 1:
-      print('  \033[46;97m' + item + '\033[0;m occurs ' + str(len(summary[item])) + ' times')
+      console.print('  [underline]' + item + '[/underline] occurs [highlight] ' + str(len(summary[item])) + ' [/highlight] times')
       # keep only the most recently added item by slicing the list to make a new list of everything except the last one (which will be the *first* one that was found)
       duplicates = summary[item][:-1]
 
@@ -700,10 +709,10 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
   # Double check you really want to delete them
   if len(actions) > 0:
     if fave_dupes:
-      print('  \033[107;95mAbout to delete ' + str(len(actions)) + ' duplicate items and favorite the originals.\033[0;m')
+      console.print('  About to delete [highlight] ' + str(len(actions)) + ' [/highlight] duplicate items and favorite the originals.')
     else:
-      print('  \033[107;95mAbout to delete ' + str(len(actions)) + ' duplicate items.\033[0;m')
-    print('  \033[107;95mDelete these items? Type "delete" to confirm.\033[0;m')
+      console.print('  About to delete [highlight] ' + str(len(actions)) + ' [/highlight] duplicate items.')
+    console.print('  [highlight] Delete these items? [/highlight] Type [command] "delete" [/command] to confirm. ')
     check = input('>>')
     if check == 'delete':
 
@@ -721,9 +730,9 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
           # 'deleted' is a raw http response (it should return '<Response [200]>') 
           # so we need to turn it into a Python string before we can do a comparison
           if str(faved) == '<Response [200]>':
-            print('  \033[46;97mFavorited ' + str((i*20)+len(chunk)) + ' items...\033[0;m')
+            console.print('  Favorited [highlight] ' + str((i*20)+len(chunk)) + ' [/highlight] items...')
           else:
-            print('  \033[46;97mSomething went wrong favoriting your dupes 😟\033[0;m')
+            console.print('  [bold red on color(255)] Something went wrong favoriting your dupes 😟 [/bold red on color(255)]')
             print(faved.text)
             break
 
@@ -737,15 +746,15 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
         deleted = send(actions_escaped, consumer_key, pocket_access_token)
 
         if str(deleted) == '<Response [200]>':
-          print('  \033[46;97mDeleted ' + str((i*20)+len(chunk)) + ' items...\033[0;m')
+          console.print('  Deleted [highlight] ' + str((i*20)+len(chunk)) + ' [/highlight] items...')
         else:
-          print('  \033[46;97mSomething went wrong deleting duplicates 😟\033[0;m')
-          print(deleted.text)
+          console.print('  [bold red on color(255)] Something went wrong deleting duplicates 😟 [/bold red on color(255)]')
+          console.print(deleted.text)
           break
 
-      print('  \033[46;97m✅ de-duping completed\033[0;m')
+      console.print('  ✅ [highlight] de-duping completed [/highlight]')
 
     else:
-      print('  \033[46;97m✋ deletion cancelled\033[0;m')
+      console.print('  ✋ [highlight] deletion cancelled [/highlight]')
   else:
-    print('  🎉 \033[46;97mNo duplicates found!\033[0;m')
+    console.print('  🎉 [highlight] No duplicates found! [/highlight]')

@@ -24,6 +24,8 @@
 # ----------------
 
 from argparse import ArgumentParser
+from rich.console import Console
+from rich.theme import Theme
 import yaml
 
 # bundled with Python
@@ -33,6 +35,13 @@ import subprocess
 
 # local modules
 from pocketsnack import toolkit as pt
+
+# set up rich
+custom_theme = Theme({
+    "highlight" : "color(255) on cyan",
+    "command": "red on white"
+})
+console = Console(theme=custom_theme)
 
 # define config filepath for all platforms
 conf_file_path = os.path.join('~', '.pocketsnack_conf.yml')
@@ -56,16 +65,16 @@ def main():
         true_vars.append(x)
 
     if S['pocket_consumer_key'] == 'YOUR_KEY_HERE':
-      print('  ⚠️ You have not set a pocket_consumer_key in your configuration file. Run \033[46;97mpocketsnack --config\033[0;m or check the README for help.')
+      console.print('\n  ⚠️ You have not set a [command] pocket_consumer_key [/command] in your configuration file. Run [highlight] pocketsnack --config [/highlight] or check the README for help.')
 
     if options.config:
       conf = pt.config(config_file)
-      print(conf)
+      console.print(conf)
 
     elif options.authorise:
       # Run authorise once first to retrieve a pocket_access_token
       auth = pt.authorise(config_file, consumer_key)
-      print(auth)
+      console.print(auth)
 
     elif options.dedupe:
       if options.tbr:
@@ -76,11 +85,11 @@ def main():
         tag = False
       
       location = tag if tag else state if state != 'unread' else 'list'
-      print('  \033[46;97mChecking for duplicates in ' + location + '\033[0;m')
+      console.print('  [highlight] Checking for duplicates in ' + location + ' [/highlight]')
       pt.dedupe(state, tag, S['fave_dupes'], consumer_key, access_token)
 
     elif options.lucky_dip:
-      print('  \033[46;97mRunning lucky dip...\033[0;m')
+      console.print('  [highlight] Running lucky dip... [/highlight]')
       dip = pt.lucky_dip(
         consumer_key, 
         access_token, 
@@ -92,7 +101,7 @@ def main():
         S['longreads_wordcount'], 
         options.before, 
         options.since)
-      print('  \033[46;97m' + dip + '\033[0;m')
+      console.print(dip)
 
     elif options.info:
 
@@ -110,33 +119,33 @@ def main():
             longreads += 1
 
         if options.before:
-          print(collection + 'has ' + items + ' items ' + 'updated prior to ' + str(options.before) + ' days ago and ' + str(longreads) + ' are longreads.\033[0;m')
+          console.print(collection + 'has ' + items + ' items ' + 'updated prior to ' + str(options.before) + ' days ago and ' + str(longreads) + ' are longreads.')
         elif options.since:
-          print(collection + 'has ' + items + ' items ' + 'updated since ' + str(options.since) + ' days ago and ' + str(longreads) + ' are longreads.\033[0;m')
+          console.print(collection + 'has [highlight] ' + items + ' [/highlight] items ' + 'updated since ' + str(options.since) + ' days ago and ' + str(longreads) + ' are longreads.')
         else:
-          print(collection + 'has ' + items + ' items and '  + str(longreads) + ' are longreads.\033[0;m')
+          console.print(collection + 'has [highlight] ' + items + ' [/highlight] items and [highlight] ' + str(longreads) + ' [/highlight] are longreads.')
 
       if options.archive:
         response = pt.info(consumer_key, access_token, archive_tag, options.before, options.since)
         if len(response) > 0:
-          print_info(response, '  \033[46;97mThe TBR archive ')
+          print_info(response, '  The TBR archive ')
         else:
-          print('  \033[46;97mNo items match that query\033[0;m')
+          console.print('  No items match that query')
 
       elif options.list:
         response = pt.info(consumer_key, access_token, False, options.before, options.since)
         if len(response) > 0:
-          print_info(response, '  \033[46;97mThe user List ')
+          print_info(response, '  The user List ')
         else:
-          print('  \033[46;97mNo items match that query\033[0;m')
+          console.print('  No items match that query')
 
       else:
-        print('\n  \033[46;97m--info\033[0;m requires a second argument (-a or -l). Check \033[46;97mpocketsnack --help\033[0;m for more information\n')
+        console.print('\n [command] --info [/command] requires a second argument ([command]-a[/command] or [command]-l[/command]). Check [command] pocketsnack --help [/command] for more information\n')
 
     elif options.purge:
 
       if options.list:
-        print('  \033[46;97mPurging tags in the list\033[0;m')
+        console.print('  [highlight] Purging tags in the list [/highlight]')
         purge = pt.purge_tags(
           'unread', 
           retain_tags, 
@@ -146,10 +155,10 @@ def main():
           options.before, 
           options.since
           )
-        print(purge)
+        console.print(purge)
 
       elif options.archive:
-        print('  \033[46;97mPurging tags in the archive\033[0;m')
+        console.print('  [highlight] Purging tags in the archive [/highlight]')
         purge = pt.purge_tags(
           'archive',
           retain_tags, 
@@ -159,10 +168,10 @@ def main():
           options.before, 
           options.since
           )
-        print(purge)
+        console.print(purge)
 
       elif options.all:
-        print('  \033[46;97mPurging tags in both the archive and the list\033[0;m')
+        console.print('  [highlight] Purging tags in both the archive and the list [/highlight]')
         purge = pt.purge_tags(
           'all', 
           retain_tags, 
@@ -172,10 +181,10 @@ def main():
           options.before, 
           options.since
           )
-        print(purge)
+        console.print(purge)
 
       elif options.tbr:
-        print('  \033[46;97mPurging tags in tbr archive\033[0;m')
+        console.print('  [highlight] Purging tags in tbr archive [/highlight]')
         purge = pt.purge_tags(
           'tbr', 
           retain_tags, 
@@ -185,10 +194,10 @@ def main():
           options.before, 
           options.since
           )
-        print(purge)
+        console.print(purge)
 
       else:
-        print('\n  \033[46;97m--purge\033[0;m requires a second argument (-a, -l or -b). Check \033[46;97mpocketsnack --help\033[0;m for more information\n')
+        console.print('\n  [highlight] --purge [/highlight] requires a second argument (-a, -l or -b). Check [highlight] pocketsnack --help [/highlight] for more information\n')
 
     elif options.stash:
       stash = pt.stash(
@@ -201,11 +210,11 @@ def main():
         ignore_tags, 
         options.before, 
         options.since)
-      print('  \033[46;97m' + stash + '\033[0;m')
+      console.print(stash)
 
     elif options.test:
       result = pt.test(consumer_key, access_token)
-      print(result)
+      console.print(result)
     
     elif options.version:
       # version number from package info
@@ -213,19 +222,19 @@ def main():
       print(vnum)
 
     elif set(true_vars).intersection(orphans):
-      print('\n   That command cannot be used by itself. Check \033[46;97mpocketsnack --help\033[0;m for more information\n')
+      console.print('\n   That command cannot be used by itself. Check [highlight] pocketsnack --help [/highlight] for more information\n')
 
     else:
-      print('  \033[46;97mpocketsnack\033[0;m requires commands and/or flags to do anything useful. Try \033[46;97mpocketsnack -h\033[0;m for more information')
+      console.print('  [highlight] pocketsnack [/highlight] requires commands and/or flags to do anything useful. Try [highlight] pocketsnack -h [/highlight] for more information')
 
-  except NameError, FileNotFoundError:
+  except (NameError, FileNotFoundError):
     # this happens when there is no config file
     # since we already provide an error message below
     # we do nothing here
     pass
 
   except ValueError:
-    print("  😳 Whoops, look's like there is a problem with your config file. Try \033[46;97mpocketsnack --config\033[0;m to fix this")
+    console.print("  😳 Whoops, looks like there is a problem with your config file. Try [highlight] pocketsnack --config [/highlight] to fix this")
 
 # -----------------------------------
 # Parse commands (the action is here)
@@ -250,7 +259,7 @@ try:
     # argparser arguments
     # ----------------
 
-    parser = ArgumentParser(description='\033[1;36mpocketsnack: KonMari your Pocket tsundoku from the command line.\033[1;m')
+    parser = ArgumentParser(description='pocketsnack: KonMari your Pocket tsundoku from the command line')
     admin = parser.add_argument_group('admin commands')
     actions = parser.add_argument_group('action commands')
     mex = parser.add_mutually_exclusive_group()
@@ -309,10 +318,10 @@ try:
     main()
 
 except FileNotFoundError:
-  print('  \033[46;97mpocketsnack\033[0;m needs a config file!')
+  console.print(' [highlight] pocketsnack [/highlight] needs a config file!')
   user_input = input('  Do you want to create one now using your default text editor (y/n)?')
   if user_input in ["y", "yes", "Y", "Yes", "YES"]:
-    conf = pt.config()
-    print(conf)
+    conf = pt.config(config_file)
+    console.print(conf)
   else:
-    print('  Some other time then.')
+    console.print('  Some other time then.')
