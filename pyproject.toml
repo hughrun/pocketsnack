@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pocketsnack"
-version = "3.1.0"
+version = "3.2.0"
 description = "KonMari your Pocket tsundoku from the command line"
 authors = ["Hugh Rundle <hugh@hughrundle.net>"]
 license = "GPL-3.0-or-later"
@@ -18,10 +18,11 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.6.1"
 requests = "^2.25.1"
 argparse = "^1.4.0"
 pyyaml = "^5.4.1"
+rich = "^9.10.0"
 
 [tool.poetry.dev-dependencies]
 

@@ -1,18 +1,18 @@
 # KonMari your Pocket tsundoku from the command line
 
-`pocketsnack` is a command line application offering various commands to make your [Pocket](https://getpocket.com) account more manageable. You can de-duplicate your list, purge unwanted tags, and hide your enormous 'to be read' list in a special archive so that looking at it doesn't become paralysing. It runs on MacOS, should run on Linux and BSD. Until I understand how to get `os` to create a filepath Windows can interpret, it will not run on Windows.
+`pocketsnack` is a command line application offering various commands to make your [Pocket](https://getpocket.com) account more manageable. You can de-duplicate your list, purge unwanted tags, and hide your enormous 'to be read' list in a special archive so that looking at it doesn't become paralysing. Tested on MacOS, Ubuntu Linux and Windows 10. Expected to run on other platforms.
 
 This is the version 3.x documentation. If you prefer to use an older version you can still read the [version 2 README](v2_README.md) or [version 1 README](v1_README.md).
 
 ## Requirements
 
-* Python 3.6 or higher
-* `xdg-utils` (for Linux & BSD)
+* Python 3.6.1 or higher
+* `xdg-utils` (on Linux & BSD)
 * A web browser to obtain a Pocket token
 
 ## tl;dr
 
-1. make sure you have installed Python version 3.6.0 or higher.
+1. make sure you have installed Python version 3.6.1 or higher.
 2. `pip install pocketsnack` (you may need to use `pip3` instead)
 3. `pocketsnack --config`
 4. Add your Pocket API consumer key to the config file
