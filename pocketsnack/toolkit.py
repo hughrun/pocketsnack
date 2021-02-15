@@ -44,7 +44,7 @@ custom_theme = Theme({
     "highlight" : "color(255) on cyan",
     "command": "red on white"
 })
-console = Console(theme=custom_theme)
+console = Console(theme=custom_theme, highlight=False)
 
 # ----------------
 # Create app
@@ -127,7 +127,7 @@ def process_items(actions, consumer_key, pocket_access_token):
     if update.raise_for_status() == None:
       console.print('[color(255) on green] Ok [/color(255) on green]') # Print 'Ok' in green.
     else:
-      console.print('😨 [bold red on color(255)] Oh dear, something went wrong. [/bold red on color(255)]') # Print error in red
+      console.print('  :worried_face: [bold red on color(255)] Oh dear, something went wrong. [/bold red on color(255)]') # Print error in red
     time.sleep(2) # don't fire off requests too quickly
 
 # ----------------
@@ -168,7 +168,8 @@ def config(config_file):
       return '  Config file created. Use [highlight] pocketsnack --auth [/highlight] to complete your setup.'
   
   except Exception:
-
+    # NOTE this seems to want to report an error in Windows Powershell, 
+    # when opening in VS Code, but this is specific to VS Code
     if sys.platform == 'win32' or sys.platform == 'cygwin':
       win_path = os.path.normpath(config_file)
       os.startfile(win_path) # windows path
@@ -191,7 +192,7 @@ def authorise(config_file, consumer_key): # With an 's'. Deal with it.
   # get the JSON response and save the token to a param for the next step
   request_token = requestOne.json()['code']
   # print the request token to the console so you know it happened
-  console.print('[highlight]  Your request token (code) is  [/highlight]' + request_token)
+  console.print('  Request token obtained...')
 
   # now you need to authorise the app in your Pocket account
   # build the url
@@ -213,7 +214,7 @@ def authorise(config_file, consumer_key): # With an 's'. Deal with it.
     # get the JSON response as a Python dictionary and call it 'res'.
     res = requestTwo.json()
     # Finally we have the access token!
-    console.print('[highlight]  Access token for ' + res['username'] + ' is  [/highlight]' + res['access_token'])
+    console.print('Access token for [highlight]  ' + res['username'] + ' [/highlight] is ' + res['access_token'])
     # Assign the access token to a parameter called access_token
     access_token = res['access_token']
     # replace the pocket_access_token line rather than just adding an extra at the end
@@ -222,7 +223,7 @@ def authorise(config_file, consumer_key): # With an 's'. Deal with it.
     for line in settings_file:
       line = re.sub('(pocket_access_token)+.*', repl, line)
       console.print(line.rstrip())
-    return '[highlight]  Token added to config file - you are ready to use pocketsnack! [/highlight] 🎉'
+    return '[highlight]  Token added to config file - you are ready to use pocketsnack! [/highlight] :party_popper:'
 
 # ------------------------------
 # Read info about Pocket account
@@ -732,7 +733,7 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
           if str(faved) == '<Response [200]>':
             console.print('  Favorited [highlight] ' + str((i*20)+len(chunk)) + ' [/highlight] items...')
           else:
-            console.print('  [bold red on color(255)] Something went wrong favoriting your dupes 😟 [/bold red on color(255)]')
+            console.print('  [bold red on color(255)] Something went wrong favoriting your dupes :worried_face: [/bold red on color(255)]')
             print(faved.text)
             break
 
@@ -748,13 +749,13 @@ def dedupe(state, tag, fave_dupes, consumer_key, pocket_access_token):
         if str(deleted) == '<Response [200]>':
           console.print('  Deleted [highlight] ' + str((i*20)+len(chunk)) + ' [/highlight] items...')
         else:
-          console.print('  [bold red on color(255)] Something went wrong deleting duplicates 😟 [/bold red on color(255)]')
+          console.print('  [bold red on color(255)] Something went wrong deleting duplicates :worried_face: [/bold red on color(255)]')
           console.print(deleted.text)
           break
 
-      console.print('  ✅ [highlight] de-duping completed [/highlight]')
+      console.print('  :white_heavy_check_mark: [highlight] de-duping completed [/highlight]')
 
     else:
-      console.print('  ✋ [highlight] deletion cancelled [/highlight]')
+      console.print('  :raised_hand: [highlight] deletion cancelled [/highlight]')
   else:
-    console.print('  🎉 [highlight] No duplicates found! [/highlight]')
+    console.print('  :party_popper: [highlight] No duplicates found! [/highlight]')

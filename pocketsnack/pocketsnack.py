@@ -41,7 +41,7 @@ custom_theme = Theme({
     "highlight" : "color(255) on cyan",
     "command": "red on white"
 })
-console = Console(theme=custom_theme)
+console = Console(theme=custom_theme, highlight=False)
 
 # define config filepath for all platforms
 conf_file_path = os.path.join('~', '.pocketsnack_conf.yml')
@@ -65,7 +65,7 @@ def main():
         true_vars.append(x)
 
     if S['pocket_consumer_key'] == 'YOUR_KEY_HERE':
-      console.print('\n  ⚠️ You have not set a [command] pocket_consumer_key [/command] in your configuration file. Run [highlight] pocketsnack --config [/highlight] or check the README for help.')
+      console.print('\n  :exclamation_mark: You have not set a [command] pocket_consumer_key [/command] in your configuration file. Run [highlight] pocketsnack --config [/highlight] or check the README for help.')
 
     if options.config:
       conf = pt.config(config_file)
@@ -74,7 +74,7 @@ def main():
     elif options.authorise:
       # Run authorise once first to retrieve a pocket_access_token
       auth = pt.authorise(config_file, consumer_key)
-      console.print(auth)
+      console.print(auth or "  [bold red on color(255)] Authorisation cancelled ")
 
     elif options.dedupe:
       if options.tbr:
@@ -234,7 +234,7 @@ def main():
     pass
 
   except ValueError:
-    console.print("  😳 Whoops, looks like there is a problem with your config file. Try [highlight] pocketsnack --config [/highlight] to fix this")
+    console.print("  :flushed_face: Whoops, looks like there is a problem with your config file. Try [highlight] pocketsnack --config [/highlight] to fix this")
 
 # -----------------------------------
 # Parse commands (the action is here)
@@ -312,6 +312,7 @@ try:
     )
 
     options = parser.parse_args()
+    configyaml.close() # we don't need to leave this open: if we do, Windows can't "authorise"
 
   if __name__ == '__main__':
 
